@@ -20,6 +20,7 @@ public final class Env{
 	private static final String KEY_DB_URL = "DB_URL";
 	private static final String KEY_DB_USER = "DB_USER";
 	private static final String KEY_DB_PASS = "DB_PASS";
+	private static final String KEY_DB_SCHEMA = "DB_SCHEMA";
 
 	@Getter
 	private static Config config = new Config();
@@ -31,8 +32,9 @@ public final class Env{
 		Objects.requireNonNull(envSource, "Environment map cannot be null");
 
 		String dbUrl = envSource.get(KEY_DB_URL);
-		String dbUser = envSource.get(KEY_DB_URL);
+		String dbUser = envSource.get(KEY_DB_USER);
 		String dbPass = envSource.get(KEY_DB_PASS);
+		String dbSchema = envSource.get(KEY_DB_SCHEMA);
 
 		List<String> missing = new ArrayList<>();
 		if(dbUrl == null || dbUrl.isBlank()){
@@ -57,12 +59,13 @@ public final class Env{
 				.dbUrl(dbUrl.trim())
 				.dbUser(dbUser.trim())
 				.dbPass(dbPass.trim())
+				.dbSchema(dbSchema != null && !dbSchema.isBlank() ? dbSchema.trim() : null)
 				.dev(devMode)
 				.build();
 
 		if(devMode){
-			log.info("Environment variables loaded successfully [ DB_URL={}, DB_USER={}, DB_PASS={} ]",
-					loadedConfig.getDbUrl(), loadedConfig.getDbUser(), loadedConfig.getDbPass());
+			log.info("Environment variables loaded successfully [ DB_URL={}, DB_USER={}, DB_SCHEMA={}, DB_PASS={} ]",
+					loadedConfig.getDbUrl(), loadedConfig.getDbUser(), loadedConfig.getDbSchema(), loadedConfig.getDbPass());
 		}
 		else{
 			log.info("Environment variables loaded successfully [ DB_URL={}, DB_USER={}, DB_PASS=[Hidden] ]",

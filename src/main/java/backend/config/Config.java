@@ -20,6 +20,7 @@ public class Config{
 
 	@ToString.Exclude
 	String dbPass;
+	String dbSchema;
 	boolean dev;
 
 	public Config(boolean dev){
