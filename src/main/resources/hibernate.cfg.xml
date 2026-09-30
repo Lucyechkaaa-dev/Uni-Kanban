@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE hibernate-configuration PUBLIC
+        "-//Hibernate/Hibernate Configuration DTD 3.0//EN"
+        "http://www.hibernate.org/dtd/hibernate-configuration-3.0.dtd">
+<hibernate-configuration>
+    <session-factory>
+        <!-- Database connection settings -->
+        <property name="hibernate.connection.driver_class">org.postgresql.Driver</property>
+        <property name="hibernate.connection.url">${DB_URL}</property>
+        <property name="hibernate.connection.username">${DB_USER}</property>
+        <property name="hibernate.connection.password">${DB_PASS}</property>
+
+        <!-- Default database schema for PostgreSQL (configurable via DB_SCHEMA env var) -->
+        <!--suppress HibernateConfigDomInspection -->
+        <property name="hibernate.default_schema">${DB_SCHEMA}</property>
+
+        <!-- Connection pool size -->
+        <property name="hibernate.connection.pool_size">10</property>
+
+        <!-- SQL logging -->
+        <property name="hibernate.show_sql">true</property>
+        <property name="hibernate.format_sql">true</property>
+        <property name="hibernate.highlight_sql">true</property>
+
+        <!-- Schema auto-generation -->
+        <property name="hibernate.hbm2ddl.auto">update</property>
+
+        <!-- Thread-bound session management -->
+        <property name="hibernate.current_session_context_class">thread</property>
+
+        <!-- Mapped entity classes -->
+        <mapping class="backend.models.user.User"/>
+        <mapping class="backend.models.task.Task"/>
+    </session-factory>
+</hibernate-configuration>

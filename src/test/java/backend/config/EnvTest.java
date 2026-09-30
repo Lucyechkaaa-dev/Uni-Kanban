@@ -86,4 +86,31 @@ class EnvTest {
         assertEquals("postgres", cfg.getDbUser());
         assertEquals("secret", cfg.getDbPass());
     }
+
+    @Test
+    @DisplayName("Should load optional DB_SCHEMA when present and trim whitespace")
+    void testLoadWithDbSchema() {
+        Map<String, String> env = Map.of(
+                "DB_URL", "jdbc:postgresql://localhost:5432/kanban",
+                "DB_USER", "postgres",
+                "DB_PASS", "secret",
+                "DB_SCHEMA", "  custom_schema  "
+        );
+
+        Config cfg = Env.load(env, false);
+        assertEquals("custom_schema", cfg.getDbSchema());
+    }
+
+    @Test
+    @DisplayName("Should leave dbSchema null when DB_SCHEMA is absent")
+    void testDbSchemaOptionalWhenAbsent() {
+        Map<String, String> env = Map.of(
+                "DB_URL", "jdbc:postgresql://localhost:5432/kanban",
+                "DB_USER", "postgres",
+                "DB_PASS", "secret"
+        );
+
+        Config cfg = Env.load(env, false);
+        assertNull(cfg.getDbSchema());
+    }
 }

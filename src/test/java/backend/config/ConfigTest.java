@@ -14,12 +14,14 @@ class ConfigTest {
                 .dbUrl("jdbc:postgresql://localhost:5432/testdb")
                 .dbUser("admin")
                 .dbPass("secret123")
+                .dbSchema("custom_schema")
                 .dev(true)
                 .build();
 
         assertEquals("jdbc:postgresql://localhost:5432/testdb", config.getDbUrl());
         assertEquals("admin", config.getDbUser());
         assertEquals("secret123", config.getDbPass());
+        assertEquals("custom_schema", config.getDbSchema());
         assertTrue(config.isDev());
     }
 

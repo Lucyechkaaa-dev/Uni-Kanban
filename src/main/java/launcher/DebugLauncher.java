@@ -7,7 +7,7 @@ import lombok.NoArgsConstructor;
 public final class DebugLauncher{
 
 	public static void main(String[] args){
-		CompileLauncher.launch(true);
+		CompileLauncher.launch(true, args);
 		System.out.println("Debug mode enabled");
 	}
 }

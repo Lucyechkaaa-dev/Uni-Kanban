@@ -5,18 +5,20 @@ import backend.config.Env;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.boot.SpringApplication;
 
 @Log4j2
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-public final class CompileLauncher{
+public class CompileLauncher{
 
 	public static void main(String[] args){
-		launch(false);
+		launch(false, args);
 	}
 
-	public static void launch(boolean dev){
+	public static void launch(boolean dev, String[] args){
 		Env.setup(dev);
 		printBanner(Env.getConfig());
+		SpringApplication.run(Main.class, args);
 	}
 
 	public static void printBanner(Config cfg){
