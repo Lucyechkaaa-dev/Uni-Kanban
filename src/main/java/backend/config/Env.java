@@ -31,7 +31,7 @@ public final class Env{
 		Objects.requireNonNull(envSource, "Environment map cannot be null");
 
 		String dbUrl = envSource.get(KEY_DB_URL);
-		String dbUser = envSource.get(KEY_DB_USER);
+		String dbUser = envSource.get(KEY_DB_URL);
 		String dbPass = envSource.get(KEY_DB_PASS);
 
 		List<String> missing = new ArrayList<>();
