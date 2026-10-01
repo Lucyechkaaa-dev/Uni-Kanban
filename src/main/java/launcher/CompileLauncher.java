@@ -2,6 +2,7 @@ package launcher;
 
 import backend.config.Config;
 import backend.config.Env;
+import backend.ui.ConsoleMenu;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -19,6 +20,7 @@ public class CompileLauncher{
 		Env.setup(dev);
 		printBanner(Env.getConfig());
 		SpringApplication.run(Main.class, args);
+		ConsoleMenu.init();
 	}
 
 	public static void printBanner(Config cfg){
