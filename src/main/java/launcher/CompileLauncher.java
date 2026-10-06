@@ -19,8 +19,23 @@ public class CompileLauncher{
 	public static void launch(boolean dev, String[] args){
 		Env.setup(dev);
 		printBanner(Env.getConfig());
-		SpringApplication.run(Main.class, args);
-		ConsoleMenu.init();
+
+		boolean cliMode = false;
+		if (args != null) {
+			for (String arg : args) {
+				if ("--cli".equalsIgnoreCase(arg)) {
+					cliMode = true;
+					break;
+				}
+			}
+		}
+
+		if (cliMode || java.awt.GraphicsEnvironment.isHeadless()) {
+			SpringApplication.run(Main.class, args);
+			ConsoleMenu.init();
+		} else {
+			backend.ui.fx.KanbanFxApplication.launchApp(args);
+		}
 	}
 
 	public static void printBanner(Config cfg){

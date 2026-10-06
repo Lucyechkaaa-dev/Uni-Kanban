@@ -17,6 +17,7 @@
         <hibernate.version>8.0.0.Beta3</hibernate.version>
         <jboss-logging.version>3.6.1.Final</jboss-logging.version>
         <junit.version>5.11.4</junit.version>
+        <javafx.version>21.0.5</javafx.version>
     </properties>
 
     <parent>
@@ -94,6 +95,24 @@
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
+
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-controls</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-fxml</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
+
+        <dependency>
+            <groupId>org.openjfx</groupId>
+            <artifactId>javafx-graphics</artifactId>
+            <version>${javafx.version}</version>
+        </dependency>
     </dependencies>
     <build>
         <plugins>
@@ -115,6 +134,14 @@
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <groupId>org.openjfx</groupId>
+                <artifactId>javafx-maven-plugin</artifactId>
+                <version>0.0.8</version>
+                <configuration>
+                    <mainClass>launcher.Main</mainClass>
+                </configuration>
             </plugin>
         </plugins>
     </build>

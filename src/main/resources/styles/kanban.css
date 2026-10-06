@@ -1,0 +1,166 @@
+/* Uni-Kanban Modern Styling */
+.root {
+    -fx-font-family: "Segoe UI", -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+    -fx-base: #1e1e2e;
+    -fx-background: #181825;
+}
+
+.kanban-topbar {
+    -fx-background-color: #1e1e2e;
+    -fx-padding: 14px 20px;
+    -fx-border-color: #313244;
+    -fx-border-width: 0 0 1px 0;
+    -fx-alignment: center-left;
+    -fx-spacing: 15px;
+}
+
+.board-title {
+    -fx-font-size: 20px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #cdd6f4;
+}
+
+.board-subtitle {
+    -fx-font-size: 12px;
+    -fx-text-fill: #a6adc8;
+}
+
+.primary-button {
+    -fx-background-color: #89b4fa;
+    -fx-text-fill: #11111b;
+    -fx-font-weight: bold;
+    -fx-background-radius: 6px;
+    -fx-padding: 7px 14px;
+    -fx-cursor: hand;
+}
+
+.primary-button:hover {
+    -fx-background-color: #b4befe;
+}
+
+.secondary-button {
+    -fx-background-color: #313244;
+    -fx-text-fill: #cdd6f4;
+    -fx-background-radius: 6px;
+    -fx-padding: 7px 14px;
+    -fx-cursor: hand;
+}
+
+.secondary-button:hover {
+    -fx-background-color: #45475a;
+}
+
+.board-scroll-pane {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-padding: 20px;
+}
+
+.board-scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
+
+.columns-container {
+    -fx-spacing: 18px;
+    -fx-padding: 0 10px 10px 0;
+}
+
+.kanban-column {
+    -fx-background-color: #1e1e2e;
+    -fx-background-radius: 10px;
+    -fx-border-color: #313244;
+    -fx-border-radius: 10px;
+    -fx-border-width: 1px;
+    -fx-pref-width: 300px;
+    -fx-min-width: 300px;
+    -fx-max-width: 300px;
+    -fx-padding: 12px;
+    -fx-spacing: 10px;
+}
+
+.column-header {
+    -fx-alignment: center-left;
+    -fx-spacing: 8px;
+    -fx-padding: 4px 2px 8px 2px;
+    -fx-border-color: #313244;
+    -fx-border-width: 0 0 1px 0;
+}
+
+.column-title {
+    -fx-font-size: 15px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #cdd6f4;
+}
+
+.column-badge {
+    -fx-background-color: #313244;
+    -fx-text-fill: #bac2de;
+    -fx-font-size: 11px;
+    -fx-font-weight: bold;
+    -fx-background-radius: 10px;
+    -fx-padding: 2px 7px;
+}
+
+.cards-container {
+    -fx-spacing: 10px;
+    -fx-padding: 4px 0;
+}
+
+.task-card {
+    -fx-background-color: #24273a;
+    -fx-background-radius: 8px;
+    -fx-border-color: #363a4f;
+    -fx-border-radius: 8px;
+    -fx-border-width: 1px;
+    -fx-padding: 12px;
+    -fx-spacing: 6px;
+}
+
+.task-card:hover {
+    -fx-border-color: #89b4fa;
+    -fx-background-color: #2a2e45;
+}
+
+.task-card-title {
+    -fx-font-size: 14px;
+    -fx-font-weight: bold;
+    -fx-text-fill: #cdd6f4;
+}
+
+.task-card-desc {
+    -fx-font-size: 12px;
+    -fx-text-fill: #a6adc8;
+}
+
+.card-actions {
+    -fx-spacing: 6px;
+    -fx-alignment: center-right;
+    -fx-padding: 6px 0 0 0;
+}
+
+.small-button {
+    -fx-background-color: #313244;
+    -fx-text-fill: #cdd6f4;
+    -fx-font-size: 11px;
+    -fx-background-radius: 4px;
+    -fx-padding: 3px 8px;
+    -fx-cursor: hand;
+}
+
+.small-button:hover {
+    -fx-background-color: #45475a;
+}
+
+.delete-button {
+    -fx-background-color: #452433;
+    -fx-text-fill: #f38ba8;
+    -fx-font-size: 11px;
+    -fx-background-radius: 4px;
+    -fx-padding: 3px 8px;
+    -fx-cursor: hand;
+}
+
+.delete-button:hover {
+    -fx-background-color: #f38ba8;
+    -fx-text-fill: #11111b;
+}

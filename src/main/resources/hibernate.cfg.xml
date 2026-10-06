@@ -31,5 +31,7 @@
         <!-- Mapped entity classes -->
         <mapping class="backend.models.user.User"/>
         <mapping class="backend.models.task.Task"/>
+        <mapping class="backend.models.task.TaskTable"/>
+        <mapping class="backend.models.task.TaskList"/>
     </session-factory>
 </hibernate-configuration>
