@@ -2,6 +2,7 @@ package backend.services;
 
 import backend.dao.UserDao;
 import backend.models.user.User;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -15,14 +16,10 @@ import java.util.UUID;
 
 @Log4j2
 @Service
+@RequiredArgsConstructor(onConstructor_ = @Autowired)
 public class UserServiceImpl implements UserService {
 
     private final UserDao userDao;
-
-    @Autowired
-    public UserServiceImpl(UserDao userDao) {
-        this.userDao = Objects.requireNonNull(userDao, "UserDao must not be null");
-    }
 
     public UserServiceImpl() {
         this(new UserDao());
