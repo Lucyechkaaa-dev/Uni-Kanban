@@ -1,5 +1,6 @@
 package backend.models.task;
 
+import backend.models.team.Team;
 import backend.models.user.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -29,6 +30,11 @@ public class TaskTable {
     @ToString.Exclude
     private User user;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "team_id")
+    @ToString.Exclude
+    private Team team;
+
     @OneToMany(mappedBy = "taskTable", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     private List<TaskList> taskLists = new ArrayList<>();
@@ -38,9 +44,22 @@ public class TaskTable {
         this.taskLists = new ArrayList<>();
     }
 
+    public TaskTable(String name, Team team) {
+        this.name = name;
+        this.team = team;
+        this.taskLists = new ArrayList<>();
+    }
+
     public TaskTable(String name, User user) {
         this.name = name;
         this.user = user;
+        this.taskLists = new ArrayList<>();
+    }
+
+    public TaskTable(String name, User user, Team team) {
+        this.name = name;
+        this.user = user;
+        this.team = team;
         this.taskLists = new ArrayList<>();
     }
 

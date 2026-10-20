@@ -10,20 +10,20 @@ import org.springframework.boot.SpringApplication;
 
 @Log4j2
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
-public class CompileLauncher{
+public class CompileLauncher {
 
-	public static void main(String[] args){
+	public static void main(String[] args) {
 		launch(false, args);
 	}
 
-	public static void launch(boolean dev, String[] args){
+	public static void launch(boolean dev, String[] args) {
 		Env.setup(dev);
 		printBanner(Env.getConfig());
 		SpringApplication.run(Main.class, args);
 		ConsoleMenu.init();
 	}
 
-	public static void printBanner(Config cfg){
+	public static void printBanner(Config cfg) {
 		String maskedPass = (cfg.getDbPass() != null && !cfg.getDbPass().isEmpty())
 				? "*".repeat(Math.min(cfg.getDbPass().length(), 8))
 				: "(not set)";
