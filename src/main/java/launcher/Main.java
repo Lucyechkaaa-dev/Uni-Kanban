@@ -3,7 +3,7 @@ package launcher;
 import lombok.NoArgsConstructor;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
-@SpringBootApplication(scanBasePackages = {"launcher", "controller", "backend"})
+@SpringBootApplication(scanBasePackages = {"launcher", "controller", "backend", "services"})
 @NoArgsConstructor
 public class Main{
 

@@ -3,6 +3,7 @@ package backend.models.task;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
 
@@ -25,16 +26,18 @@ public class TaskList {
     private String name;
 
     @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "task_table_id")
     @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private TaskTable taskTable;
 
     @OneToMany(mappedBy = "taskList", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private List<Task> tasks = new ArrayList<>();
 
     public TaskList(String name) {
-        this.name = name;
-        this.tasks = new ArrayList<>();
+        this(name, null);
     }
 
     public TaskList(String name, TaskTable taskTable) {

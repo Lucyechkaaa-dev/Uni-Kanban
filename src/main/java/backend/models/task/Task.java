@@ -44,17 +44,11 @@ public class Task {
     private TaskList taskList;
 
     public Task(String title) {
-        this.title = title;
-    }
-
-    public Task(String title, String description) {
-        this.title = title;
-        this.description = description;
+        this(title, null);
     }
 
     public Task(String title, TaskList taskList) {
-        this.title = title;
-        this.taskList = taskList;
+        this(title, null, null, taskList);
     }
 
     public Task(String title, String description, User user, TaskList taskList) {
