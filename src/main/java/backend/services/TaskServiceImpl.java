@@ -1,4 +1,4 @@
-package services;
+package backend.services;
 
 import backend.dao.TaskDao;
 import backend.dao.TaskListDao;
@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
@@ -23,23 +24,24 @@ import java.util.UUID;
 @Log4j2
 @Service
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
-public class TaskService {
+public class TaskServiceImpl implements TaskService {
 
 	private final TaskDao taskDao;
 	private final TaskListDao taskListDao;
 	private final TaskTableDao taskTableDao;
 	private final UserDao userDao;
 
-	public TaskService() {
+	public TaskServiceImpl() {
 		this(new TaskDao(), new TaskListDao(), new TaskTableDao(), new UserDao());
 	}
 
 	public static TaskService create() {
-		return new TaskService();
+		return new TaskServiceImpl();
 	}
 
 	// ==================== Task Table Operations ====================
 
+	@Override
 	public TaskTable createTable(String name, UUID userId) {
 		validateNotBlank(name, "Table name cannot be empty");
 		User user = userId != null ? getUserOrThrow(userId) : null;
@@ -49,30 +51,37 @@ public class TaskService {
 		return table;
 	}
 
+	@Override
 	public TaskTable createTable(String name) {
 		return createTable(name, null);
 	}
 
+	@Override
 	public Optional<TaskTable> findTable(UUID id) {
 		return id != null ? Optional.ofNullable(taskTableDao.findById(id)) : Optional.empty();
 	}
 
+	@Override
 	public TaskTable getTable(UUID id) {
 		return findTable(id).orElseThrow(() -> new NoSuchElementException("TaskTable not found with id: " + id));
 	}
 
+	@Override
 	public List<TaskTable> findTablesByUser(UUID userId) {
 		return userId != null ? taskTableDao.findByUserId(userId) : Collections.emptyList();
 	}
 
+	@Override
 	public List<TaskTable> findAllTables() {
 		return taskTableDao.findAll();
 	}
 
+	@Override
 	public TaskTable renameTable(UUID tableId, String newName) {
 		return renameTable(tableId, newName, null);
 	}
 
+	@Override
 	public TaskTable renameTable(UUID tableId, String newName, UUID operatorId) {
 		validateNotBlank(newName, "New table name cannot be empty");
 		TaskTable table = getTable(tableId);
@@ -83,18 +92,26 @@ public class TaskService {
 		return table;
 	}
 
+	@Override
 	public boolean deleteTable(UUID tableId) {
 		return deleteTable(tableId, null);
 	}
 
+	@Override
 	public boolean deleteTable(UUID tableId, UUID operatorId) {
-		assertTableOwner(tableId, operatorId);
+		if (tableId == null) return false;
+		Optional<TaskTable> tableOpt = findTable(tableId);
+		if (tableOpt.isEmpty()) {
+			return false;
+		}
+		assertTableOwner(tableOpt.get(), operatorId);
 		log.info("Deleting TaskTable id={} by operator {}", tableId, operatorId);
 		return taskTableDao.deleteById(tableId);
 	}
 
 	// ==================== Role Management Operations ====================
 
+	@Override
 	public void assignMemberRole(UUID tableId, UUID targetUserId, String role, UUID operatorId) {
 		assertTableOwner(tableId, operatorId);
 		validateNotBlank(role, "Role name cannot be empty");
@@ -106,6 +123,7 @@ public class TaskService {
 		log.info("Table owner {} assigned role '{}' to user {} on table {}", operatorId, role, targetUserId, tableId);
 	}
 
+	@Override
 	public void removeMemberRole(UUID tableId, UUID targetUserId, UUID operatorId) {
 		assertTableOwner(tableId, operatorId);
 		TaskTable table = getTable(tableId);
@@ -114,14 +132,17 @@ public class TaskService {
 		log.info("Table owner {} removed role from user {} on table {}", operatorId, targetUserId, tableId);
 	}
 
+	@Override
 	public String getMemberRole(UUID tableId, UUID userId) {
 		return getTable(tableId).getMemberRole(userId);
 	}
 
-	public java.util.Map<UUID, String> getMemberRoles(UUID tableId) {
+	@Override
+	public Map<UUID, String> getMemberRoles(UUID tableId) {
 		return getTable(tableId).getMemberRoles();
 	}
 
+	@Override
 	public void addUserRole(UUID tableId, UUID targetUserId, String role, UUID operatorId) {
 		assertTableOwner(tableId, operatorId);
 		validateNotBlank(role, "Role name cannot be empty");
@@ -131,6 +152,7 @@ public class TaskService {
 		log.info("Table owner {} added role '{}' to user {}", operatorId, role, targetUserId);
 	}
 
+	@Override
 	public void removeUserRole(UUID tableId, UUID targetUserId, String role, UUID operatorId) {
 		assertTableOwner(tableId, operatorId);
 		validateNotBlank(role, "Role name cannot be empty");
@@ -142,10 +164,12 @@ public class TaskService {
 
 	// ==================== Task List Operations ====================
 
+	@Override
 	public TaskList createList(String name, UUID tableId) {
 		return createList(name, tableId, null);
 	}
 
+	@Override
 	public TaskList createList(String name, UUID tableId, UUID operatorId) {
 		validateNotBlank(name, "List name cannot be empty");
 		TaskTable table = tableId != null ? getTable(tableId) : null;
@@ -158,26 +182,32 @@ public class TaskService {
 		return list;
 	}
 
+	@Override
 	public TaskList createList(String name) {
 		return createList(name, null, null);
 	}
 
+	@Override
 	public Optional<TaskList> findList(UUID id) {
 		return id != null ? Optional.ofNullable(taskListDao.findById(id)) : Optional.empty();
 	}
 
+	@Override
 	public TaskList getList(UUID id) {
 		return findList(id).orElseThrow(() -> new NoSuchElementException("TaskList not found with id: " + id));
 	}
 
+	@Override
 	public List<TaskList> findListsByTable(UUID tableId) {
 		return tableId != null ? taskListDao.findByTableId(tableId) : Collections.emptyList();
 	}
 
+	@Override
 	public TaskList renameList(UUID listId, String newName) {
 		return renameList(listId, newName, null);
 	}
 
+	@Override
 	public TaskList renameList(UUID listId, String newName, UUID operatorId) {
 		validateNotBlank(newName, "New list name cannot be empty");
 		TaskList list = getList(listId);
@@ -190,12 +220,19 @@ public class TaskService {
 		return list;
 	}
 
+	@Override
 	public boolean deleteList(UUID listId) {
 		return deleteList(listId, null);
 	}
 
+	@Override
 	public boolean deleteList(UUID listId, UUID operatorId) {
-		TaskList list = getList(listId);
+		if (listId == null) return false;
+		Optional<TaskList> listOpt = findList(listId);
+		if (listOpt.isEmpty()) {
+			return false;
+		}
+		TaskList list = listOpt.get();
 		if (list.getTaskTable() != null) {
 			assertTableOwner(list.getTaskTable(), operatorId);
 		}
@@ -205,25 +242,29 @@ public class TaskService {
 
 	// ==================== Task Operations ====================
 
+	@Override
 	public Task createTask(String title) {
 		return createTask(title, null, null, null);
 	}
 
+	@Override
 	public Task createTask(String title, String description) {
 		return createTask(title, description, null, null);
 	}
 
+	@Override
 	public Task createTask(String title, String description, UUID listId) {
 		return createTask(title, description, null, listId);
 	}
 
+	@Override
 	public Task createTask(String title, String description, UUID userId, UUID listId) {
 		validateNotBlank(title, "Task title cannot be empty");
 		User user = userId != null ? getUserOrThrow(userId) : null;
 		TaskList list = listId != null ? getList(listId) : null;
 
 		Task task = new Task(title.trim(), description != null ? description.trim() : null, user, list);
-		if (list != null) {
+		if (list != null && list.getTasks() != null) {
 			task.setPosition(list.getTasks().size());
 		}
 		taskDao.save(task);
@@ -231,6 +272,7 @@ public class TaskService {
 		return task;
 	}
 
+	@Override
 	public Task createTask(Task task) {
 		Objects.requireNonNull(task, "Task cannot be null");
 		validateNotBlank(task.getTitle(), "Task title cannot be empty");
@@ -240,34 +282,42 @@ public class TaskService {
 		return task;
 	}
 
+	@Override
 	public Optional<Task> findTask(UUID id) {
 		return id != null ? Optional.ofNullable(taskDao.findById(id)) : Optional.empty();
 	}
 
+	@Override
 	public Task getTask(UUID id) {
 		return findTask(id).orElseThrow(() -> new NoSuchElementException("Task not found with id: " + id));
 	}
 
+	@Override
 	public List<Task> findTasksByList(UUID listId) {
 		return listId != null ? taskDao.findByTaskListId(listId) : Collections.emptyList();
 	}
 
+	@Override
 	public List<Task> findTasksByUser(UUID userId) {
 		return userId != null ? taskDao.findByUserId(userId) : Collections.emptyList();
 	}
 
+	@Override
 	public List<Task> searchTasks(String query) {
 		return taskDao.searchByTitle(query);
 	}
 
+	@Override
 	public List<Task> findAllTasks() {
 		return taskDao.findAll();
 	}
 
+	@Override
 	public Task updateTask(UUID id, String newTitle, String newDescription) {
 		return updateTask(id, newTitle, newDescription, null);
 	}
 
+	@Override
 	public Task updateTask(UUID id, String newTitle, String newDescription, UUID operatorId) {
 		Task task = getTask(id);
 		assertTaskAccess(task, operatorId);
@@ -284,6 +334,7 @@ public class TaskService {
 		return task;
 	}
 
+	@Override
 	public Task updateTask(Task task) {
 		Objects.requireNonNull(task, "Task cannot be null");
 		if (task.getId() == null) {
@@ -295,10 +346,12 @@ public class TaskService {
 		return task;
 	}
 
+	@Override
 	public Task assignTask(UUID taskId, UUID userId) {
 		return assignTask(taskId, userId, null);
 	}
 
+	@Override
 	public Task assignTask(UUID taskId, UUID userId, UUID operatorId) {
 		Task task = getTask(taskId);
 		assertTaskAccess(task, operatorId);
@@ -309,10 +362,12 @@ public class TaskService {
 		return task;
 	}
 
+	@Override
 	public Task unassignTask(UUID taskId) {
 		return unassignTask(taskId, null);
 	}
 
+	@Override
 	public Task unassignTask(UUID taskId, UUID operatorId) {
 		Task task = getTask(taskId);
 		assertTaskAccess(task, operatorId);
@@ -322,14 +377,17 @@ public class TaskService {
 		return task;
 	}
 
+	@Override
 	public Task moveTask(UUID taskId, UUID targetListId) {
 		return moveTask(taskId, targetListId, -1, null);
 	}
 
+	@Override
 	public Task moveTask(UUID taskId, UUID targetListId, int position) {
 		return moveTask(taskId, targetListId, position, null);
 	}
 
+	@Override
 	public Task moveTask(UUID taskId, UUID targetListId, int position, UUID operatorId) {
 		Task task = getTask(taskId);
 		assertTaskAccess(task, operatorId);
@@ -341,18 +399,22 @@ public class TaskService {
 		task.setTaskList(targetList);
 		if (position >= 0) {
 			task.setPosition(position);
-		} else if (targetList != null) {
+		} else if (targetList != null && targetList.getTasks() != null) {
 			task.setPosition(targetList.getTasks().size());
+		} else {
+			task.setPosition(0);
 		}
 		taskDao.update(task);
 		log.info("Moved Task id={} to List id={} at position {} by operator {}", taskId, targetListId, task.getPosition(), operatorId);
 		return task;
 	}
 
+	@Override
 	public Task reorderTask(UUID taskId, int newPosition) {
 		return reorderTask(taskId, newPosition, null);
 	}
 
+	@Override
 	public Task reorderTask(UUID taskId, int newPosition, UUID operatorId) {
 		if (newPosition < 0) {
 			throw new IllegalArgumentException("Position must be non-negative: " + newPosition);
@@ -365,19 +427,26 @@ public class TaskService {
 		return task;
 	}
 
+	@Override
 	public boolean deleteTask(UUID taskId) {
 		return deleteTask(taskId, null);
 	}
 
+	@Override
 	public boolean deleteTask(UUID taskId, UUID operatorId) {
-		Task task = getTask(taskId);
-		assertTaskAccess(task, operatorId);
+		if (taskId == null) return false;
+		Optional<Task> taskOpt = findTask(taskId);
+		if (taskOpt.isEmpty()) {
+			return false;
+		}
+		assertTaskAccess(taskOpt.get(), operatorId);
 		log.info("Deleting Task id={} by operator {}", taskId, operatorId);
 		return taskDao.deleteById(taskId);
 	}
 
-	// ==================== Internal Helpers ====================
+	// ==================== Internal Helpers / Utilities ====================
 
+	@Override
 	public boolean isTableOwner(UUID tableId, UUID userId) {
 		if (tableId == null || userId == null) return false;
 		return getTable(tableId).isOwner(userId);

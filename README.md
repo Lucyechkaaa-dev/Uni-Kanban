@@ -20,10 +20,16 @@
   - `VIEWER` — read-only access.
 - Bidirectional association between `User` $\leftrightarrow$ `UserTeam` $\leftrightarrow$ `Team` with database-level uniqueness constraints on `(user_id, team_id)`.
 
-### 2. Kanban Board Hierarchy
-- **`TaskTable` (Board)** — associated with a specific team or standalone user.
+### 2. Kanban Board Hierarchy & Task Service
+- **`TaskTable` (Board)** — associated with a specific team or standalone user, with per-board member roles (`memberRoles`).
 - **`TaskList` (Columns / Swimlanes)** — configurable workflow stages (e.g., *To Do*, *In Progress*, *Done*).
 - **`Task` (Cards)** — task title, rich multi-line description, order position, and assignee (`User`).
+- **`TaskService` / `TaskServiceImpl`** — core board orchestrator:
+  - Board lifecycle: creating, renaming, and deleting boards with table ownership enforcement.
+  - Column lifecycle: creating, renaming, and deleting task lists.
+  - Task lifecycle: creating, updating, moving between columns, position reordering, assignment, and unassignment.
+  - Role management: assigning and revoking board-level roles as well as user roles (`ADMIN`, `USER`, `MANAGER`, `DEVELOPER`, `TESTER`, `VIEWER`).
+  - Strict security & access checks: operations verified against board owners and task assignees.
 
 ### 3. Import & Export Subsystem (JSON & Excel CSV)
 - **JSON (Hierarchical Backup):**
@@ -69,12 +75,12 @@ Uni-Kanban/
 │   │   ├── java/
 │   │   │   ├── backend/
 │   │   │   │   ├── config/             # Application configuration & .env loader
-│   │   │   │   ├── dao/                # Data Access Objects (UserDao, TeamDao, UserTeamDao)
+│   │   │   │   ├── dao/                # Data Access Objects (TaskDao, TaskListDao, TaskTableDao, TeamDao, UserDao, UserTeamDao)
 │   │   │   │   ├── models/
 │   │   │   │   │   ├── task/           # Task, TaskList, TaskTable entities
 │   │   │   │   │   ├── team/           # Team, UserTeam, TeamRole entities
-│   │   │   │   │   └── user/           # User entity
-│   │   │   │   ├── services/           # Business logic (UserService, TeamService, UserTeamService)
+│   │   │   │   │   └── user/           # User entity & Role enum
+│   │   │   │   ├── services/           # Business logic (TaskService, TeamService, UserService, UserTeamService)
 │   │   │   │   │   └── export/         # JSON and CSV export/import service & DTOs
 │   │   │   │   ├── ui/                 # Interactive CLI menus (ConsoleMenu, UserMenu, ImportExportMenu)
 │   │   │   │   └── utils/              # Hibernate session factory (HibernateFactory)

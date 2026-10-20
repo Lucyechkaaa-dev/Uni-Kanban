@@ -36,6 +36,7 @@ public class TaskTable {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "team_id")
     @ToString.Exclude
+    @EqualsAndHashCode.Exclude
     private Team team;
 
     @OneToMany(mappedBy = "taskTable", cascade = CascadeType.ALL, orphanRemoval = true)
@@ -50,13 +51,14 @@ public class TaskTable {
     private java.util.Map<UUID, String> memberRoles = new java.util.HashMap<>();
 
     public TaskTable(String name) {
-        this(name, null);
+        this(name, (User) null);
     }
 
     public TaskTable(String name, Team team) {
         this.name = name;
         this.team = team;
         this.taskLists = new ArrayList<>();
+        this.memberRoles = new java.util.HashMap<>();
     }
 
     public TaskTable(String name, User user) {
@@ -95,6 +97,7 @@ public class TaskTable {
         this.user = user;
         this.team = team;
         this.taskLists = new ArrayList<>();
+        this.memberRoles = new java.util.HashMap<>();
     }
 
     public void addTaskList(TaskList taskList) {

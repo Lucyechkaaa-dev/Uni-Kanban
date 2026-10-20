@@ -53,6 +53,10 @@ public class Team {
         this.tables = new ArrayList<>();
     }
 
+    public Team(String name, String description) {
+        this(name, description, null);
+    }
+
     public Team(String name, User owner) {
         this.name = name;
         this.owner = owner;
