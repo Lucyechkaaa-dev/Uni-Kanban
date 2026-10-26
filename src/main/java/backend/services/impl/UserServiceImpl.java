@@ -1,7 +1,8 @@
-package backend.services;
+package backend.services.impl;
 
 import backend.dao.UserDao;
 import backend.models.user.User;
+import backend.services.UserService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,7 +18,7 @@ import java.util.UUID;
 @Log4j2
 @Service
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
-public class UserServiceImpl implements UserService {
+public class UserServiceImpl implements UserService{
 
     private final UserDao userDao;
 

@@ -18,7 +18,7 @@ import java.util.UUID;
 @Data
 @Entity
 @Table(name = "task_tables")
-public class TaskTable {
+public class Board{
 
     @Id
     @GeneratedValue(strategy = GenerationType.UUID)
@@ -50,18 +50,18 @@ public class TaskTable {
     @Column(name = "role")
     private java.util.Map<UUID, String> memberRoles = new java.util.HashMap<>();
 
-    public TaskTable(String name) {
+    public Board(String name) {
         this(name, (User) null);
     }
 
-    public TaskTable(String name, Team team) {
+    public Board(String name, Team team) {
         this.name = name;
         this.team = team;
         this.taskLists = new ArrayList<>();
         this.memberRoles = new java.util.HashMap<>();
     }
 
-    public TaskTable(String name, User user) {
+    public Board(String name, User user) {
         this.name = name;
         this.user = user;
         this.taskLists = new ArrayList<>();
@@ -92,7 +92,7 @@ public class TaskTable {
         return userId != null ? memberRoles.get(userId) : null;
     }
 
-    public TaskTable(String name, User user, Team team) {
+    public Board(String name, User user, Team team) {
         this.name = name;
         this.user = user;
         this.team = team;
@@ -102,11 +102,11 @@ public class TaskTable {
 
     public void addTaskList(TaskList taskList) {
         taskLists.add(taskList);
-        taskList.setTaskTable(this);
+        taskList.setBoard(this);
     }
 
     public void removeTaskList(TaskList taskList) {
         taskLists.remove(taskList);
-        taskList.setTaskTable(null);
+        taskList.setBoard(null);
     }
 }

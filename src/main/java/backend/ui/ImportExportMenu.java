@@ -1,15 +1,14 @@
 package backend.ui;
 
 import backend.dao.TeamDao;
-import backend.models.task.TaskTable;
+import backend.models.task.Board;
 import backend.models.team.Team;
-import backend.services.export.KanbanImportExportService;
-import backend.services.export.KanbanImportExportServiceImpl;
+import backend.export.impl.KanbanImportExportService;
+import backend.export.KanbanImportExportServiceImpl;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 
 import java.io.File;
-import java.util.Optional;
 import java.util.Scanner;
 import java.util.UUID;
 
@@ -47,7 +46,7 @@ public class ImportExportMenu {
     }
 
     private void exportBoardToJson() {
-        TaskTable table = promptForBoard();
+        Board table = promptForBoard();
         if (table == null) return;
 
         System.out.print("Enter output JSON file path (e.g. board.json): ");
@@ -75,7 +74,7 @@ public class ImportExportMenu {
         Team targetTeam = promptForOptionalTeam();
 
         try {
-            TaskTable table = importExportService.importFromJson(file, targetTeam);
+            Board table = importExportService.importFromJson(file, targetTeam);
             System.out.println("Board '" + table.getName() + "' successfully imported from JSON!");
             System.out.println("Columns count: " + table.getTaskLists().size());
             table.getTaskLists().forEach(col ->
@@ -87,7 +86,7 @@ public class ImportExportMenu {
     }
 
     private void exportBoardToCsv() {
-        TaskTable table = promptForBoard();
+        Board table = promptForBoard();
         if (table == null) return;
 
         System.out.print("Enter output CSV file path (e.g. board.csv): ");
@@ -115,7 +114,7 @@ public class ImportExportMenu {
         Team targetTeam = promptForOptionalTeam();
 
         try {
-            TaskTable table = importExportService.importFromCsv(file, targetTeam);
+            Board table = importExportService.importFromCsv(file, targetTeam);
             System.out.println("Board '" + table.getName() + "' successfully imported from CSV!");
             System.out.println("Columns count: " + table.getTaskLists().size());
             table.getTaskLists().forEach(col ->
@@ -126,14 +125,14 @@ public class ImportExportMenu {
         }
     }
 
-    private TaskTable promptForBoard() {
+    private Board promptForBoard() {
         System.out.print("Enter board name to export (or leave blank to create sample board): ");
         String boardName = sc.nextLine().trim();
         if (boardName.isEmpty()) {
             boardName = "Sample Kanban Board";
         }
 
-        TaskTable table = new TaskTable(boardName);
+        Board table = new Board(boardName);
         backend.models.task.TaskList todo = new backend.models.task.TaskList("To Do");
         todo.addTask(new backend.models.task.Task("Setup Project", "Configure build and models"));
         todo.addTask(new backend.models.task.Task("Write Tests", "Comprehensive test coverage"));

@@ -1,7 +1,7 @@
 package backend.models.user;
 
 import backend.models.task.Task;
-import backend.models.task.TaskTable;
+import backend.models.task.Board;
 import backend.models.team.Team;
 import backend.models.team.TeamRole;
 import backend.models.team.UserTeam;
@@ -39,7 +39,7 @@ public class User {
 	@ToString.Exclude
 	private String password;
 
-	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+	@OneToMany(mappedBy = "userOwner", cascade = CascadeType.ALL, orphanRemoval = true)
 	@ToString.Exclude
 	@EqualsAndHashCode.Exclude
 	private List<Task> tasks = new ArrayList<>();
@@ -47,7 +47,7 @@ public class User {
 	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
 	@ToString.Exclude
 	@EqualsAndHashCode.Exclude
-	private List<TaskTable> taskTables = new ArrayList<>();
+	private List<Board> boards = new ArrayList<>();
 
 	@OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
 	@ToString.Exclude
@@ -63,7 +63,7 @@ public class User {
 		this.username = username;
 		this.password = password;
 		this.tasks = new ArrayList<>();
-		this.taskTables = new ArrayList<>();
+		this.boards = new ArrayList<>();
 		this.userTeams = new ArrayList<>();
 		this.roles = new HashSet<>(Set.of(Role.USER.name()));
 	}
@@ -113,25 +113,25 @@ public class User {
 	public void addTask(Task task) {
 		log.info("{} Task set for userID {}", task.getId(), this.id);
 		tasks.add(task);
-		task.setUser(this);
+		task.setUserOwner(this);
 	}
 
 	public void removeTask(Task task) {
 		log.info("{} Task removed for userID {}", task.getId(), this.id);
 		tasks.remove(task);
-		task.setUser(null);
+		task.setUserOwner(null);
 	}
 
-	public void addTaskTable(TaskTable taskTable) {
-		log.info("{} TaskTable added for userID {}", taskTable.getId(), this.id);
-		taskTables.add(taskTable);
-		taskTable.setUser(this);
+	public void addTaskTable(Board board) {
+		log.info("{} TaskTable added for userID {}", board.getId(), this.id);
+		boards.add(board);
+		board.setUser(this);
 	}
 
-	public void removeTaskTable(TaskTable taskTable) {
-		log.info("{} TaskTable removed for userID {}", taskTable.getId(), this.id);
-		taskTables.remove(taskTable);
-		taskTable.setUser(null);
+	public void removeTaskTable(Board board) {
+		log.info("{} TaskTable removed for userID {}", board.getId(), this.id);
+		boards.remove(board);
+		board.setUser(null);
 	}
 
 	public void joinTeam(Team team, TeamRole role) {

@@ -2,7 +2,7 @@ package backend.ui;
 
 import backend.models.user.User;
 import backend.services.UserService;
-import backend.services.UserServiceImpl;
+import backend.services.impl.UserServiceImpl;
 import lombok.NoArgsConstructor;
 
 import java.util.List;
