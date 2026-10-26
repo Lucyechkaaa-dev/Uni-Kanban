@@ -12,6 +12,6 @@ public class KanbanController {
 
     @GetMapping("/status")
     public String status() {
-        return "andrej shkipper terpila";
+        return "andrej shkipper nie terpila";
     }
 }

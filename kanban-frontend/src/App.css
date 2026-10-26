@@ -1,0 +1,674 @@
+/* =================================================================
+   ПЕРЕМЕННЫЕ ТЕМ И СБРОС ОГРАНИЧЕНИЙ WIDE-SCREEN
+   ================================================================= */
+:root, [data-theme="light"] {
+  color-scheme: light; /* системные элементы (календарь, select, скроллбары) берут тему приложения, а не ОС */
+  --bg-main: #f8fafc;
+  --bg-card: #ffffff;
+  --bg-sidebar: #ffffff;
+  --border-color: #e2e8f0;
+  --text-primary: #0f172a;
+  --text-secondary: #64748b;
+  --accent-green: #275438;
+  --accent-green-hover: #1e422c;
+  --tag-bg: #f1f5f9;
+  --input-bg: #ffffff;
+  --focus-ring: rgba(39, 84, 56, 0.25);
+}
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --bg-main: #0f172a;
+  --bg-card: #1e293b;
+  --bg-sidebar: #0f172a;
+  --border-color: #334155;
+  --text-primary: #f8fafc;
+  --text-secondary: #94a3b8;
+  --accent-green: #166534;
+  --accent-green-hover: #14532d;
+  --tag-bg: #334155;
+  --input-bg: #1e293b;
+  --focus-ring: rgba(34, 197, 94, 0.35);
+}
+
+html, body, #root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+body {
+  background-color: var(--bg-main);
+  color: var(--text-primary);
+  text-align: left; /* Фикс выравнивания текста */
+}
+
+/* =================================================================
+   ЭКРАНЫ АВТОРИЗАЦИИ / РЕГИСТРАЦИИ (Уменьшены на 20%)
+   ================================================================= */
+.auth-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  /* Центрируем auto-отступами (см. ниже), а не justify-content: center:
+     иначе при малой высоте окна верх формы обрезается и до него нельзя доскроллить */
+  width: 100vw;
+  height: 100vh;
+  overflow-y: auto;
+  background-color: var(--bg-main);
+  padding: 16px;
+}
+
+.auth-container > :first-child {
+  margin-top: auto;
+}
+
+.auth-container > :last-child {
+  margin-bottom: auto;
+}
+
+.brand-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+  font-size: 1.15rem;
+  margin-bottom: 18px;
+}
+
+.brand-logo-icon {
+  width: 28px;
+  height: 28px;
+  background-color: var(--accent-green);
+  color: white;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* Карточка уменьшена с 440px до 350px (~20%) */
+.auth-card {
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 12px;
+  padding: 24px;
+  width: 100%;
+  max-width: 350px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+}
+
+.auth-card h2 {
+  font-size: 1.4rem;
+  font-weight: 600;
+  margin-bottom: 18px;
+  text-align: left; /* как на прототипе */
+}
+
+.form-group {
+  margin-bottom: 14px;
+  text-align: left;
+}
+
+.form-group label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 500;
+  margin-bottom: 5px;
+  color: var(--text-primary); /* на прототипе подписи тёмные, а не серые */
+}
+
+.form-group input {
+  width: 100%;
+  padding: 8px 12px;
+  background-color: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 0.88rem;
+  outline: none;
+}
+
+.form-hint {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.btn-primary {
+  width: 100%;
+  padding: 9px;
+  background-color: var(--accent-green);
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  font-size: 0.88rem;
+  cursor: pointer;
+  margin-top: 6px;
+  transition: background-color 0.2s;
+}
+
+.btn-primary:hover {
+  background-color: var(--accent-green-hover);
+}
+
+.auth-footer {
+  text-align: center;
+  margin-top: 24px; /* футер теперь под карточкой, а не внутри неё */
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.auth-footer button {
+  background: none;
+  border: none;
+  color: var(--accent-green);
+  font-weight: 600;
+  cursor: pointer;
+  margin-left: 4px;
+}
+
+/* =================================================================
+   ПРОЕКТ / КАНБАН-ДОСКА НА ВЕСЬ ЭКРАН (100vw x 100vh)
+   ================================================================= */
+.app-layout {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.sidebar {
+  width: 240px;
+  min-width: 240px;
+  background-color: var(--bg-sidebar);
+  border-right: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 16px;
+}
+
+.sidebar-top .logo-area {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  margin-bottom: 24px;
+}
+
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.nav-item.active {
+  background-color: var(--tag-bg);
+  color: var(--text-primary);
+}
+
+.user-profile {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 12px;
+  border-top: 1px solid var(--border-color);
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.avatar {
+  width: 30px;
+  height: 30px;
+  background-color: #cbd5e1;
+  color: #334155;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 0.75rem;
+}
+
+.user-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.user-role {
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+.main-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.board-header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 24px;
+  border-bottom: 1px solid var(--border-color);
+  background-color: var(--bg-card);
+  font-size: 0.82rem;
+  color: var(--text-secondary);
+}
+
+.board-body-header {
+  padding: 16px 24px;
+  background-color: var(--bg-card);
+  border-bottom: 1px solid var(--border-color);
+  text-align: left; /* Выравнивание по левому краю */
+}
+
+.board-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.board-title-row h1 {
+  font-size: 1.35rem;
+  font-weight: 700;
+}
+
+.board-comment-text {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+  margin-top: 4px;
+  text-align: left; /* Слева */
+}
+
+.board-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.btn-secondary {
+  padding: 6px 12px;
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  color: var(--text-primary);
+  font-size: 0.82rem;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.btn-success {
+  padding: 6px 12px;
+  background-color: var(--accent-green);
+  border: none;
+  border-radius: 6px;
+  color: white;
+  font-size: 0.82rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.theme-toggle-btn {
+  background: var(--tag-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-primary);
+  padding: 5px 10px;
+  border-radius: 16px;
+  cursor: pointer;
+  font-size: 0.78rem;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+/* Доска и колонки */
+.kanban-board {
+  display: flex;
+  gap: 16px;
+  padding: 20px 24px;
+  overflow-x: auto;
+  flex: 1;
+  background-color: var(--bg-main);
+}
+
+.kanban-column {
+  min-width: 270px;
+  width: 270px;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  display: flex;
+  flex-direction: column;
+  height: fit-content;
+  max-height: 100%;
+}
+
+.column-header {
+  padding: 10px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.column-title-wrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 0.88rem;
+}
+
+.status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.count-badge {
+  background-color: var(--tag-bg);
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+}
+
+/* Кнопки в шапке колонки (+ и ...) */
+.column-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.icon-btn {
+  background: none;
+  border: none;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.icon-btn:hover {
+  background-color: var(--tag-bg);
+  color: var(--text-primary);
+}
+
+.column-cards {
+  padding: 10px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 100px;
+}
+
+/* Перетаскиваемая карточка */
+.kanban-card {
+  background-color: var(--bg-main);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 10px 12px;
+  cursor: grab;
+  text-align: left;
+  transition: box-shadow 0.2s, transform 0.1s;
+}
+
+.kanban-card:active {
+  cursor: grabbing;
+  transform: scale(0.98);
+}
+
+.card-top {
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  margin-bottom: 4px;
+}
+
+.card-title {
+  font-weight: 600;
+  font-size: 0.85rem;
+  margin-bottom: 4px;
+  overflow-wrap: anywhere; /* длинное слово без пробелов переносится, а не вылезает за карточку */
+}
+
+.card-comment {
+  font-size: 0.78rem;
+  color: var(--text-secondary);
+  margin-bottom: 8px;
+  overflow-wrap: anywhere;
+}
+
+.card-tags {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
+}
+
+.custom-tag {
+  background-color: var(--tag-bg);
+  font-size: 0.72rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--text-primary);
+}
+
+.card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.72rem;
+  color: var(--text-secondary);
+  border-top: 1px solid var(--border-color);
+  padding-top: 6px;
+}
+
+.card-footer-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Выпадающее меню 3-х точек */
+.card-menu-container {
+  position: relative;
+}
+
+.dropdown-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  background-color: var(--bg-card);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 50;
+  min-width: 120px;
+  overflow: hidden;
+}
+
+.dropdown-item {
+  width: 100%;
+  padding: 8px 12px;
+  background: none;
+  border: none;
+  text-align: left;
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.dropdown-item:hover {
+  background-color: var(--tag-bg);
+}
+
+.dropdown-item.delete {
+  color: #ef4444;
+}
+
+/* Форма инлайн-редактирования карточки */
+.edit-card-form {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 4px;
+}
+
+.edit-input, .edit-select {
+  width: 100%;
+  padding: 6px 8px;
+  background-color: var(--input-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  color: var(--text-primary);
+  font-size: 0.8rem;
+  outline: none;
+}
+
+/* Рамка фокуса. Стандартную мы убрали через outline: none, поэтому рисуем свою,
+   иначе при работе с клавиатуры не видно, в каком поле курсор.
+   (color-scheme для календаря теперь задан выше, в переменных темы) */
+.form-group input:focus,
+.edit-input:focus,
+.edit-select:focus {
+  border-color: var(--accent-green);
+  box-shadow: 0 0 0 2px var(--focus-ring);
+}
+
+.edit-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 4px;
+}
+
+.btn-sm-save {
+  padding: 4px 10px;
+  background-color: var(--accent-green);
+  color: white;
+  border: none;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+.btn-sm-cancel {
+  padding: 4px 10px;
+  background-color: transparent;
+  border: 1px solid var(--border-color);
+  color: var(--text-secondary);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+/* Форма добавления новой задачи в колонке */
+.add-task-inline {
+  background-color: var(--bg-main);
+  border: 1px dashed var(--accent-green);
+  border-radius: 6px;
+  padding: 10px;
+  margin-bottom: 8px;
+}
+
+/* Два поля формы в одной строке (тег + приоритет): делят ширину поровну и не обрезаются */
+.form-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+.form-row > .edit-select {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Кнопки Create / Save неактивны, пока название пустое */
+.btn-sm-save:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* Первая строка карточки: код задачи и приоритет слева, меню справа */
+.card-top-left {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.priority-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background-color: var(--tag-bg);
+  color: var(--text-primary);
+  font-size: 0.68rem;
+  padding: 1px 6px;
+  border-radius: 4px;
+}
+
+.priority-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: #94a3b8;
+}
+
+.priority-dot-high {
+  background-color: #ef4444;
+}
+
+.priority-dot-medium {
+  background-color: #eab308;
+}
+
+.priority-dot-low {
+  background-color: #22c55e;
+}
+
+/* Если у карточки нет комментария, заголовок всё равно отделяется от тегов */
+.card-title + .card-tags {
+  margin-top: 8px;
+}
+
+/* Кнопка выхода в профиле сайдбара */
+.user-profile .icon-btn {
+  display: flex;
+  align-items: center;
+  padding: 6px;
+}
