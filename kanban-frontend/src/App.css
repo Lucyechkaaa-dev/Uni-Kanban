@@ -1,8 +1,5 @@
-/* =================================================================
-   ПЕРЕМЕННЫЕ ТЕМ И СБРОС ОГРАНИЧЕНИЙ WIDE-SCREEN
-   ================================================================= */
 :root, [data-theme="light"] {
-  color-scheme: light; /* системные элементы (календарь, select, скроллбары) берут тему приложения, а не ОС */
+  color-scheme: light;
   --bg-main: #f8fafc;
   --bg-card: #ffffff;
   --bg-sidebar: #ffffff;
@@ -50,18 +47,13 @@ html, body, #root {
 body {
   background-color: var(--bg-main);
   color: var(--text-primary);
-  text-align: left; /* Фикс выравнивания текста */
+  text-align: left;
 }
 
-/* =================================================================
-   ЭКРАНЫ АВТОРИЗАЦИИ / РЕГИСТРАЦИИ (Уменьшены на 20%)
-   ================================================================= */
 .auth-container {
   display: flex;
   flex-direction: column;
   align-items: center;
-  /* Центрируем auto-отступами (см. ниже), а не justify-content: center:
-     иначе при малой высоте окна верх формы обрезается и до него нельзя доскроллить */
   width: 100vw;
   height: 100vh;
   overflow-y: auto;
@@ -97,7 +89,6 @@ body {
   justify-content: center;
 }
 
-/* Карточка уменьшена с 440px до 350px (~20%) */
 .auth-card {
   background-color: var(--bg-card);
   border: 1px solid var(--border-color);
@@ -112,7 +103,7 @@ body {
   font-size: 1.4rem;
   font-weight: 600;
   margin-bottom: 18px;
-  text-align: left; /* как на прототипе */
+  text-align: left;
 }
 
 .form-group {
@@ -125,7 +116,7 @@ body {
   font-size: 0.8rem;
   font-weight: 500;
   margin-bottom: 5px;
-  color: var(--text-primary); /* на прототипе подписи тёмные, а не серые */
+  color: var(--text-primary);
 }
 
 .form-group input {
@@ -165,7 +156,7 @@ body {
 
 .auth-footer {
   text-align: center;
-  margin-top: 24px; /* футер теперь под карточкой, а не внутри неё */
+  margin-top: 24px;
   font-size: 0.8rem;
   color: var(--text-secondary);
 }
@@ -179,9 +170,6 @@ body {
   margin-left: 4px;
 }
 
-/* =================================================================
-   ПРОЕКТ / КАНБАН-ДОСКА НА ВЕСЬ ЭКРАН (100vw x 100vh)
-   ================================================================= */
 .app-layout {
   display: flex;
   width: 100vw;
@@ -285,7 +273,7 @@ body {
   padding: 16px 24px;
   background-color: var(--bg-card);
   border-bottom: 1px solid var(--border-color);
-  text-align: left; /* Выравнивание по левому краю */
+  text-align: left;
 }
 
 .board-title-row {
@@ -303,7 +291,7 @@ body {
   font-size: 0.85rem;
   color: var(--text-secondary);
   margin-top: 4px;
-  text-align: left; /* Слева */
+  text-align: left;
 }
 
 .board-actions {
@@ -347,7 +335,6 @@ body {
   gap: 5px;
 }
 
-/* Доска и колонки */
 .kanban-board {
   display: flex;
   gap: 16px;
@@ -399,7 +386,6 @@ body {
   color: var(--text-secondary);
 }
 
-/* Кнопки в шапке колонки (+ и ...) */
 .column-actions {
   display: flex;
   align-items: center;
@@ -431,7 +417,6 @@ body {
   min-height: 100px;
 }
 
-/* Перетаскиваемая карточка */
 .kanban-card {
   background-color: var(--bg-main);
   border: 1px solid var(--border-color);
@@ -459,7 +444,7 @@ body {
   font-weight: 600;
   font-size: 0.85rem;
   margin-bottom: 4px;
-  overflow-wrap: anywhere; /* длинное слово без пробелов переносится, а не вылезает за карточку */
+  overflow-wrap: anywhere;
 }
 
 .card-comment {
@@ -500,7 +485,6 @@ body {
   gap: 6px;
 }
 
-/* Выпадающее меню 3-х точек */
 .card-menu-container {
   position: relative;
 }
@@ -540,7 +524,6 @@ body {
   color: #ef4444;
 }
 
-/* Форма инлайн-редактирования карточки */
 .edit-card-form {
   display: flex;
   flex-direction: column;
@@ -559,9 +542,6 @@ body {
   outline: none;
 }
 
-/* Рамка фокуса. Стандартную мы убрали через outline: none, поэтому рисуем свою,
-   иначе при работе с клавиатуры не видно, в каком поле курсор.
-   (color-scheme для календаря теперь задан выше, в переменных темы) */
 .form-group input:focus,
 .edit-input:focus,
 .edit-select:focus {
@@ -596,7 +576,6 @@ body {
   cursor: pointer;
 }
 
-/* Форма добавления новой задачи в колонке */
 .add-task-inline {
   background-color: var(--bg-main);
   border: 1px dashed var(--accent-green);
@@ -605,7 +584,6 @@ body {
   margin-bottom: 8px;
 }
 
-/* Два поля формы в одной строке (тег + приоритет): делят ширину поровну и не обрезаются */
 .form-row {
   display: flex;
   gap: 6px;
@@ -617,13 +595,11 @@ body {
   min-width: 0;
 }
 
-/* Кнопки Create / Save неактивны, пока название пустое */
 .btn-sm-save:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
 
-/* Первая строка карточки: код задачи и приоритет слева, меню справа */
 .card-top-left {
   display: flex;
   align-items: center;
@@ -661,12 +637,10 @@ body {
   background-color: #22c55e;
 }
 
-/* Если у карточки нет комментария, заголовок всё равно отделяется от тегов */
 .card-title + .card-tags {
   margin-top: 8px;
 }
 
-/* Кнопка выхода в профиле сайдбара */
 .user-profile .icon-btn {
   display: flex;
   align-items: center;
