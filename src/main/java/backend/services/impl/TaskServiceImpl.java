@@ -1,4 +1,4 @@
-package backend.services;
+package backend.services.impl;
 
 import backend.dao.TaskDao;
 import backend.dao.TaskListDao;
@@ -6,8 +6,9 @@ import backend.dao.TaskTableDao;
 import backend.dao.UserDao;
 import backend.models.task.Task;
 import backend.models.task.TaskList;
-import backend.models.task.TaskTable;
+import backend.models.task.Board;
 import backend.models.user.User;
+import backend.services.TaskService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,7 +25,7 @@ import java.util.UUID;
 @Log4j2
 @Service
 @RequiredArgsConstructor(onConstructor_ = @Autowired)
-public class TaskServiceImpl implements TaskService {
+public class TaskServiceImpl implements TaskService{
 
 	private final TaskDao taskDao;
 	private final TaskListDao taskListDao;
@@ -42,49 +43,49 @@ public class TaskServiceImpl implements TaskService {
 	// ==================== Task Table Operations ====================
 
 	@Override
-	public TaskTable createTable(String name, UUID userId) {
+	public Board createTable(String name, UUID userId) {
 		validateNotBlank(name, "Table name cannot be empty");
 		User user = userId != null ? getUserOrThrow(userId) : null;
-		TaskTable table = new TaskTable(name.trim(), user);
+		Board table = new Board(name.trim(), user);
 		taskTableDao.save(table);
 		log.info("Created TaskTable '{}' (id={}) for user {}", table.getName(), table.getId(), userId);
 		return table;
 	}
 
 	@Override
-	public TaskTable createTable(String name) {
+	public Board createTable(String name) {
 		return createTable(name, null);
 	}
 
 	@Override
-	public Optional<TaskTable> findTable(UUID id) {
+	public Optional<Board> findTable(UUID id) {
 		return id != null ? Optional.ofNullable(taskTableDao.findById(id)) : Optional.empty();
 	}
 
 	@Override
-	public TaskTable getTable(UUID id) {
+	public Board getTable(UUID id) {
 		return findTable(id).orElseThrow(() -> new NoSuchElementException("TaskTable not found with id: " + id));
 	}
 
 	@Override
-	public List<TaskTable> findTablesByUser(UUID userId) {
+	public List<Board> findTablesByUser(UUID userId) {
 		return userId != null ? taskTableDao.findByUserId(userId) : Collections.emptyList();
 	}
 
 	@Override
-	public List<TaskTable> findAllTables() {
+	public List<Board> findAllTables() {
 		return taskTableDao.findAll();
 	}
 
 	@Override
-	public TaskTable renameTable(UUID tableId, String newName) {
+	public Board renameTable(UUID tableId, String newName) {
 		return renameTable(tableId, newName, null);
 	}
 
 	@Override
-	public TaskTable renameTable(UUID tableId, String newName, UUID operatorId) {
+	public Board renameTable(UUID tableId, String newName, UUID operatorId) {
 		validateNotBlank(newName, "New table name cannot be empty");
-		TaskTable table = getTable(tableId);
+		Board table = getTable(tableId);
 		assertTableOwner(table, operatorId);
 		table.setName(newName.trim());
 		taskTableDao.update(table);
@@ -100,7 +101,7 @@ public class TaskServiceImpl implements TaskService {
 	@Override
 	public boolean deleteTable(UUID tableId, UUID operatorId) {
 		if (tableId == null) return false;
-		Optional<TaskTable> tableOpt = findTable(tableId);
+		Optional<Board> tableOpt = findTable(tableId);
 		if (tableOpt.isEmpty()) {
 			return false;
 		}
@@ -117,7 +118,7 @@ public class TaskServiceImpl implements TaskService {
 		validateNotBlank(role, "Role name cannot be empty");
 		getUserOrThrow(targetUserId);
 
-		TaskTable table = getTable(tableId);
+		Board table = getTable(tableId);
 		table.assignMemberRole(targetUserId, role);
 		taskTableDao.update(table);
 		log.info("Table owner {} assigned role '{}' to user {} on table {}", operatorId, role, targetUserId, tableId);
@@ -126,7 +127,7 @@ public class TaskServiceImpl implements TaskService {
 	@Override
 	public void removeMemberRole(UUID tableId, UUID targetUserId, UUID operatorId) {
 		assertTableOwner(tableId, operatorId);
-		TaskTable table = getTable(tableId);
+		Board table = getTable(tableId);
 		table.removeMemberRole(targetUserId);
 		taskTableDao.update(table);
 		log.info("Table owner {} removed role from user {} on table {}", operatorId, targetUserId, tableId);
@@ -172,7 +173,7 @@ public class TaskServiceImpl implements TaskService {
 	@Override
 	public TaskList createList(String name, UUID tableId, UUID operatorId) {
 		validateNotBlank(name, "List name cannot be empty");
-		TaskTable table = tableId != null ? getTable(tableId) : null;
+		Board table = tableId != null ? getTable(tableId) : null;
 		if (table != null) {
 			assertTableOwner(table, operatorId);
 		}
@@ -211,8 +212,8 @@ public class TaskServiceImpl implements TaskService {
 	public TaskList renameList(UUID listId, String newName, UUID operatorId) {
 		validateNotBlank(newName, "New list name cannot be empty");
 		TaskList list = getList(listId);
-		if (list.getTaskTable() != null) {
-			assertTableOwner(list.getTaskTable(), operatorId);
+		if (list.getBoard() != null) {
+			assertTableOwner(list.getBoard(), operatorId);
 		}
 		list.setName(newName.trim());
 		taskListDao.update(list);
@@ -233,8 +234,8 @@ public class TaskServiceImpl implements TaskService {
 			return false;
 		}
 		TaskList list = listOpt.get();
-		if (list.getTaskTable() != null) {
-			assertTableOwner(list.getTaskTable(), operatorId);
+		if (list.getBoard() != null) {
+			assertTableOwner(list.getBoard(), operatorId);
 		}
 		log.info("Deleting TaskList id={} by operator {}", listId, operatorId);
 		return taskListDao.deleteById(listId);
@@ -356,7 +357,7 @@ public class TaskServiceImpl implements TaskService {
 		Task task = getTask(taskId);
 		assertTaskAccess(task, operatorId);
 		User user = getUserOrThrow(userId);
-		task.setUser(user);
+		task.setUserOwner(user);
 		taskDao.update(task);
 		log.info("Assigned Task id={} to User id={} by operator {}", taskId, userId, operatorId);
 		return task;
@@ -371,7 +372,7 @@ public class TaskServiceImpl implements TaskService {
 	public Task unassignTask(UUID taskId, UUID operatorId) {
 		Task task = getTask(taskId);
 		assertTaskAccess(task, operatorId);
-		task.setUser(null);
+		task.setUserOwner(null);
 		taskDao.update(task);
 		log.info("Unassigned Task id={} by operator {}", taskId, operatorId);
 		return task;
@@ -392,11 +393,11 @@ public class TaskServiceImpl implements TaskService {
 		Task task = getTask(taskId);
 		assertTaskAccess(task, operatorId);
 		TaskList targetList = targetListId != null ? getList(targetListId) : null;
-		if (targetList != null && targetList.getTaskTable() != null) {
-			assertTableOwner(targetList.getTaskTable(), operatorId);
+		if (targetList != null && targetList.getBoard() != null) {
+			assertTableOwner(targetList.getBoard(), operatorId);
 		}
 
-		task.setTaskList(targetList);
+		task.setTaskListParent(targetList);
 		if (position >= 0) {
 			task.setPosition(position);
 		} else if (targetList != null && targetList.getTasks() != null) {
@@ -452,7 +453,7 @@ public class TaskServiceImpl implements TaskService {
 		return getTable(tableId).isOwner(userId);
 	}
 
-	private void assertTableOwner(TaskTable table, UUID operatorId) {
+	private void assertTableOwner(Board table, UUID operatorId) {
 		if (operatorId != null) {
 			if (table == null || !table.isOwner(operatorId)) {
 				throw new SecurityException("User " + operatorId + " is not the owner of table " + (table != null ? table.getId() : "null"));
@@ -468,8 +469,8 @@ public class TaskServiceImpl implements TaskService {
 
 	private void assertTaskAccess(Task task, UUID operatorId) {
 		if (operatorId != null) {
-			boolean isOwner = task.getTaskList() != null && task.getTaskList().getTaskTable() != null && task.getTaskList().getTaskTable().isOwner(operatorId);
-			boolean isAssignee = task.getUser() != null && operatorId.equals(task.getUser().getId());
+			boolean isOwner = task.getTaskListParent() != null && task.getTaskListParent().getBoard() != null && task.getTaskListParent().getBoard().isOwner(operatorId);
+			boolean isAssignee = task.getUserOwner() != null && operatorId.equals(task.getUserOwner().getId());
 			if (!isOwner && !isAssignee) {
 				throw new SecurityException("User " + operatorId + " is not authorized to modify task " + task.getId());
 			}

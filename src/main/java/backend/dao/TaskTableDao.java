@@ -1,6 +1,6 @@
 package backend.dao;
 
-import backend.models.task.TaskTable;
+import backend.models.task.Board;
 import backend.utils.HibernateFactory;
 import lombok.extern.log4j.Log4j2;
 import org.hibernate.Session;
@@ -15,11 +15,11 @@ import java.util.UUID;
 @Repository
 public class TaskTableDao {
 
-	public TaskTable findById(UUID id) {
+	public Board findById(UUID id) {
 		if (id == null) return null;
 		log.info("Search task table for id {}", id);
 		try (Session session = HibernateFactory.getSessionFactory().openSession()) {
-			TaskTable table = session.find(TaskTable.class, id);
+			Board table = session.find(Board.class, id);
 			if (table != null) {
 				log.info("TaskTable found: id={}, name={}", table.getId(), table.getName());
 				return table;
@@ -29,7 +29,7 @@ public class TaskTableDao {
 		}
 	}
 
-	public void save(TaskTable table) {
+	public void save(Board table) {
 		Transaction tx = null;
 		try (Session session = HibernateFactory.getSessionFactory().openSession()) {
 			tx = session.beginTransaction();
@@ -43,7 +43,7 @@ public class TaskTableDao {
 		}
 	}
 
-	public void update(TaskTable table) {
+	public void update(Board table) {
 		Transaction tx = null;
 		try (Session session = HibernateFactory.getSessionFactory().openSession()) {
 			tx = session.beginTransaction();
@@ -57,7 +57,7 @@ public class TaskTableDao {
 		}
 	}
 
-	public void delete(TaskTable table) {
+	public void delete(Board table) {
 		Transaction tx = null;
 		try (Session session = HibernateFactory.getSessionFactory().openSession()) {
 			tx = session.beginTransaction();
@@ -77,7 +77,7 @@ public class TaskTableDao {
 		Transaction tx = null;
 		try (Session session = HibernateFactory.getSessionFactory().openSession()) {
 			tx = session.beginTransaction();
-			TaskTable table = session.find(TaskTable.class, id);
+			Board table = session.find(Board.class, id);
 			if (table != null) {
 				session.remove(table);
 				tx.commit();
@@ -94,16 +94,16 @@ public class TaskTableDao {
 		}
 	}
 
-	public List<TaskTable> findAll() {
+	public List<Board> findAll() {
 		try (Session session = HibernateFactory.getSessionFactory().openSession()) {
-			return session.createQuery("from TaskTable", TaskTable.class).list();
+			return session.createQuery("from Board", Board.class).list();
 		}
 	}
 
-	public List<TaskTable> findByUserId(UUID userId) {
+	public List<Board> findByUserId(UUID userId) {
 		if (userId == null) return Collections.emptyList();
 		try (Session session = HibernateFactory.getSessionFactory().openSession()) {
-			return session.createQuery("from TaskTable t where t.user.id = :userId", TaskTable.class)
+			return session.createQuery("from Board t where t.user.id = :userId", Board.class)
 					.setParameter("userId", userId)
 					.list();
 		}

@@ -2,7 +2,7 @@ package backend.services;
 
 import backend.models.task.Task;
 import backend.models.task.TaskList;
-import backend.models.task.TaskTable;
+import backend.models.task.Board;
 
 import java.util.List;
 import java.util.Map;
@@ -13,21 +13,21 @@ public interface TaskService {
 
     // ==================== Task Table Operations ====================
 
-    TaskTable createTable(String name, UUID userId);
+    Board createTable(String name, UUID userId);
 
-    TaskTable createTable(String name);
+    Board createTable(String name);
 
-    Optional<TaskTable> findTable(UUID id);
+    Optional<Board> findTable(UUID id);
 
-    TaskTable getTable(UUID id);
+    Board getTable(UUID id);
 
-    List<TaskTable> findTablesByUser(UUID userId);
+    List<Board> findTablesByUser(UUID userId);
 
-    List<TaskTable> findAllTables();
+    List<Board> findAllTables();
 
-    TaskTable renameTable(UUID tableId, String newName);
+    Board renameTable(UUID tableId, String newName);
 
-    TaskTable renameTable(UUID tableId, String newName, UUID operatorId);
+    Board renameTable(UUID tableId, String newName, UUID operatorId);
 
     boolean deleteTable(UUID tableId);
 

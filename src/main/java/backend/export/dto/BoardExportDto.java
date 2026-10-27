@@ -1,8 +1,8 @@
-package backend.services.export.dto;
+package backend.export.dto;
 
 import backend.models.task.Task;
 import backend.models.task.TaskList;
-import backend.models.task.TaskTable;
+import backend.models.task.Board;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
@@ -22,7 +22,7 @@ public class BoardExportDto {
         this.columns = new ArrayList<>();
     }
 
-    public static BoardExportDto fromEntity(TaskTable table) {
+    public static BoardExportDto fromEntity(Board table) {
         if (table == null) {
             return new BoardExportDto();
         }
@@ -32,7 +32,7 @@ public class BoardExportDto {
                 ColumnExportDto colDto = new ColumnExportDto(list.getName());
                 if (list.getTasks() != null) {
                     for (Task task : list.getTasks()) {
-                        String assignee = (task.getUser() != null) ? task.getUser().getUsername() : null;
+                        String assignee = (task.getUserOwner() != null) ? task.getUserOwner().getUsername() : null;
                         colDto.getTasks().add(new TaskExportDto(
                                 task.getTitle(),
                                 task.getDescription(),

@@ -1,4 +1,4 @@
-package backend.services.export.dto;
+package backend.export.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;

@@ -1,15 +1,16 @@
-package backend.services.export;
+package backend.export;
 
 import backend.dao.UserDao;
+import backend.export.impl.KanbanImportExportService;
 import backend.models.task.Task;
 import backend.models.task.TaskList;
-import backend.models.task.TaskTable;
+import backend.models.task.Board;
 import backend.models.team.Team;
 import backend.models.team.UserTeam;
 import backend.models.user.User;
-import backend.services.export.dto.BoardExportDto;
-import backend.services.export.dto.ColumnExportDto;
-import backend.services.export.dto.TaskExportDto;
+import backend.export.dto.BoardExportDto;
+import backend.export.dto.ColumnExportDto;
+import backend.export.dto.TaskExportDto;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import lombok.extern.log4j.Log4j2;
@@ -26,7 +27,7 @@ import java.util.*;
 
 @Log4j2
 @Service
-public class KanbanImportExportServiceImpl implements KanbanImportExportService {
+public class KanbanImportExportServiceImpl implements KanbanImportExportService{
 
     private static final String UTF8_BOM = "\uFEFF";
     private static final char DEFAULT_CSV_DELIMITER = ';';
@@ -46,7 +47,7 @@ public class KanbanImportExportServiceImpl implements KanbanImportExportService 
     }
 
     @Override
-    public String exportToJson(TaskTable table) {
+    public String exportToJson(Board table) {
         Objects.requireNonNull(table, "TaskTable cannot be null for export");
         log.info("Exporting board '{}' to JSON", table.getName());
         try {
@@ -59,7 +60,7 @@ public class KanbanImportExportServiceImpl implements KanbanImportExportService 
     }
 
     @Override
-    public void exportToJson(TaskTable table, OutputStream outputStream) {
+    public void exportToJson(Board table, OutputStream outputStream) {
         Objects.requireNonNull(outputStream, "OutputStream cannot be null");
         String json = exportToJson(table);
         try {
@@ -72,7 +73,7 @@ public class KanbanImportExportServiceImpl implements KanbanImportExportService 
     }
 
     @Override
-    public void exportToJson(TaskTable table, File file) {
+    public void exportToJson(Board table, File file) {
         Objects.requireNonNull(file, "File cannot be null");
         try (FileOutputStream fos = new FileOutputStream(file)) {
             exportToJson(table, fos);
@@ -84,7 +85,7 @@ public class KanbanImportExportServiceImpl implements KanbanImportExportService 
     }
 
     @Override
-    public TaskTable importFromJson(String jsonContent, Team targetTeam) {
+    public Board importFromJson(String jsonContent, Team targetTeam) {
         if (jsonContent == null || jsonContent.isBlank()) {
             throw new IllegalArgumentException("JSON content cannot be empty");
         }
@@ -99,7 +100,7 @@ public class KanbanImportExportServiceImpl implements KanbanImportExportService 
     }
 
     @Override
-    public TaskTable importFromJson(InputStream inputStream, Team targetTeam) {
+    public Board importFromJson(InputStream inputStream, Team targetTeam) {
         Objects.requireNonNull(inputStream, "InputStream cannot be null");
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
             StringBuilder sb = new StringBuilder();
@@ -115,7 +116,7 @@ public class KanbanImportExportServiceImpl implements KanbanImportExportService 
     }
 
     @Override
-    public TaskTable importFromJson(File file, Team targetTeam) {
+    public Board importFromJson(File file, Team targetTeam) {
         Objects.requireNonNull(file, "File cannot be null");
         try (FileInputStream fis = new FileInputStream(file)) {
             return importFromJson(fis, targetTeam);
@@ -126,7 +127,7 @@ public class KanbanImportExportServiceImpl implements KanbanImportExportService 
     }
 
     @Override
-    public String exportToCsv(TaskTable table) {
+    public String exportToCsv(Board table) {
         Objects.requireNonNull(table, "TaskTable cannot be null for export");
         log.info("Exporting board '{}' to CSV for Excel", table.getName());
 
@@ -157,8 +158,8 @@ public class KanbanImportExportServiceImpl implements KanbanImportExportService 
                         for (Task task : tasks) {
                             String title = (task.getTitle() != null) ? task.getTitle() : "";
                             String desc = (task.getDescription() != null) ? task.getDescription() : "";
-                            String assignee = (task.getUser() != null && task.getUser().getUsername() != null)
-                                    ? task.getUser().getUsername()
+                            String assignee = (task.getUserOwner() != null && task.getUserOwner().getUsername() != null)
+                                    ? task.getUserOwner().getUsername()
                                     : "";
                             int pos = task.getPosition();
                             printer.printRecord(boardName, colName, title, desc, assignee, pos);
@@ -175,7 +176,7 @@ public class KanbanImportExportServiceImpl implements KanbanImportExportService 
     }
 
     @Override
-    public void exportToCsv(TaskTable table, OutputStream outputStream) {
+    public void exportToCsv(Board table, OutputStream outputStream) {
         Objects.requireNonNull(outputStream, "OutputStream cannot be null");
         String csv = exportToCsv(table);
         try {
@@ -188,7 +189,7 @@ public class KanbanImportExportServiceImpl implements KanbanImportExportService 
     }
 
     @Override
-    public void exportToCsv(TaskTable table, File file) {
+    public void exportToCsv(Board table, File file) {
         Objects.requireNonNull(file, "File cannot be null");
         try (FileOutputStream fos = new FileOutputStream(file)) {
             exportToCsv(table, fos);
@@ -200,7 +201,7 @@ public class KanbanImportExportServiceImpl implements KanbanImportExportService 
     }
 
     @Override
-    public TaskTable importFromCsv(String csvContent, Team targetTeam) {
+    public Board importFromCsv(String csvContent, Team targetTeam) {
         if (csvContent == null || csvContent.isBlank()) {
             throw new IllegalArgumentException("CSV content cannot be empty");
         }
@@ -222,7 +223,7 @@ public class KanbanImportExportServiceImpl implements KanbanImportExportService 
 
             String boardName = null;
             Map<String, TaskList> columnsMap = new LinkedHashMap<>();
-            TaskTable table = new TaskTable();
+            Board table = new Board();
             if (targetTeam != null) {
                 table.setTeam(targetTeam);
             }
@@ -270,7 +271,7 @@ public class KanbanImportExportServiceImpl implements KanbanImportExportService 
 
                     if (assigneeName != null && !assigneeName.isBlank()) {
                         User assignee = resolveUser(assigneeName, targetTeam);
-                        task.setUser(assignee);
+                        task.setUserOwner(assignee);
                     }
 
                     column.addTask(task);
@@ -292,7 +293,7 @@ public class KanbanImportExportServiceImpl implements KanbanImportExportService 
     }
 
     @Override
-    public TaskTable importFromCsv(InputStream inputStream, Team targetTeam) {
+    public Board importFromCsv(InputStream inputStream, Team targetTeam) {
         Objects.requireNonNull(inputStream, "InputStream cannot be null");
         try (BufferedReader reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))) {
             StringBuilder sb = new StringBuilder();
@@ -308,7 +309,7 @@ public class KanbanImportExportServiceImpl implements KanbanImportExportService 
     }
 
     @Override
-    public TaskTable importFromCsv(File file, Team targetTeam) {
+    public Board importFromCsv(File file, Team targetTeam) {
         Objects.requireNonNull(file, "File cannot be null");
         try (FileInputStream fis = new FileInputStream(file)) {
             return importFromCsv(fis, targetTeam);
@@ -318,8 +319,8 @@ public class KanbanImportExportServiceImpl implements KanbanImportExportService 
         }
     }
 
-    private TaskTable convertDtoToEntity(BoardExportDto dto, Team targetTeam) {
-        TaskTable table = new TaskTable(dto.getName() != null ? dto.getName() : "Imported Board");
+    private Board convertDtoToEntity(BoardExportDto dto, Team targetTeam) {
+        Board table = new Board(dto.getName() != null ? dto.getName() : "Imported Board");
         if (targetTeam != null) {
             table.setTeam(targetTeam);
         }
@@ -337,7 +338,7 @@ public class KanbanImportExportServiceImpl implements KanbanImportExportService 
 
                         if (taskDto.getAssignee() != null && !taskDto.getAssignee().isBlank()) {
                             User assignee = resolveUser(taskDto.getAssignee(), targetTeam);
-                            task.setUser(assignee);
+                            task.setUserOwner(assignee);
                         }
 
                         column.addTask(task);

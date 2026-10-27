@@ -2,12 +2,9 @@ package backend.models.task;
 
 import backend.models.user.User;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 
+import java.time.LocalDate;
 import java.util.UUID;
 
 @AllArgsConstructor
@@ -15,54 +12,57 @@ import java.util.UUID;
 @Data
 @Entity
 @Table(name = "tasks")
-public class Task {
+public class Task{
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.UUID)
-    @EqualsAndHashCode.Include
-    private UUID id;
+	@Id
+	@GeneratedValue(strategy = GenerationType.UUID)
+	@EqualsAndHashCode.Include
+	private UUID id;
 
-    @Column(nullable = false)
-    private String title;
+	@Column(nullable = false, updatable = false, name = "created_date")
+	private long createdDate = LocalDate.now().toEpochDay();
 
-    @Column(columnDefinition = "TEXT")
-    private String description;
+	@Column(nullable = false)
+	private String title;
 
-    @Column(nullable = false)
-    private int position = 0;
+	@Column(columnDefinition = "TEXT")
+	private String description;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id")
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    private User user;
+	@Column(nullable = false)
+	private int position = 0;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "task_list_id")
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    private TaskList taskList;
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "userOwner_id")
+	@ToString.Exclude
+	@EqualsAndHashCode.Exclude
+	private User userOwner;
 
-    public Task(String title) {
-        this(title, null, null, null);
-    }
+	@ManyToOne(fetch = FetchType.LAZY)
+	@JoinColumn(name = "task_list_id")
+	@ToString.Exclude
+	@EqualsAndHashCode.Exclude
+	private TaskList taskListParent;
 
-    public Task(String title, String description) {
-        this(title, description, null, null);
-    }
+	public Task(String title){
+		this(title, null, null, null);
+	}
 
-    public Task(String title, TaskList taskList) {
-        this(title, null, null, taskList);
-    }
+	public Task(String title, String description){
+		this(title, description, null, null);
+	}
 
-    public Task(String title, String description, TaskList taskList) {
-        this(title, description, null, taskList);
-    }
+	public Task(String title, TaskList taskListParent){
+		this(title, null, null, taskListParent);
+	}
 
-    public Task(String title, String description, User user, TaskList taskList) {
-        this.title = title;
-        this.description = description;
-        this.user = user;
-        this.taskList = taskList;
-    }
+	public Task(String title, String description, TaskList taskListParent){
+		this(title, description, null, taskListParent);
+	}
+
+	public Task(String title, String description, User userOwner, TaskList taskListParent){
+		this.title = title;
+		this.description = description;
+		this.userOwner = userOwner;
+		this.taskListParent = taskListParent;
+	}
 }

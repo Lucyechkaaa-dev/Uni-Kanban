@@ -103,7 +103,7 @@ public class TaskDao {
 	public List<Task> findByUserId(UUID userId) {
 		if (userId == null) return Collections.emptyList();
 		try (Session session = HibernateFactory.getSessionFactory().openSession()) {
-			return session.createQuery("from Task t where t.user.id = :userId order by t.position asc", Task.class)
+			return session.createQuery("from Task t where t.userOwner.id = :userId order by t.position asc", Task.class)
 					.setParameter("userId", userId)
 					.list();
 		}
@@ -112,7 +112,7 @@ public class TaskDao {
 	public List<Task> findByTaskListId(UUID taskListId) {
 		if (taskListId == null) return Collections.emptyList();
 		try (Session session = HibernateFactory.getSessionFactory().openSession()) {
-			return session.createQuery("from Task t where t.taskList.id = :taskListId order by t.position asc", Task.class)
+			return session.createQuery("from Task t where t.taskListParent.id = :taskListId order by t.position asc", Task.class)
 					.setParameter("taskListId", taskListId)
 					.list();
 		}

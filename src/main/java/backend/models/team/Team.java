@@ -1,6 +1,6 @@
 package backend.models.team;
 
-import backend.models.task.TaskTable;
+import backend.models.task.Board;
 import backend.models.user.User;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
@@ -45,7 +45,7 @@ public class Team {
     @OneToMany(mappedBy = "team", cascade = CascadeType.ALL, orphanRemoval = true)
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
-    private List<TaskTable> tables = new ArrayList<>();
+    private List<Board> tables = new ArrayList<>();
 
     public Team(String name) {
         this.name = name;
@@ -81,12 +81,12 @@ public class Team {
         members.removeIf(m -> m.getUser() != null && m.getUser().equals(user));
     }
 
-    public void addTable(TaskTable table) {
+    public void addTable(Board table) {
         tables.add(table);
         table.setTeam(this);
     }
 
-    public void removeTable(TaskTable table) {
+    public void removeTable(Board table) {
         tables.remove(table);
         table.setTeam(null);
     }

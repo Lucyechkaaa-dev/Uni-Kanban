@@ -1,4 +1,4 @@
-package backend.services;
+package backend.services.impl;
 
 import backend.dao.TeamDao;
 import backend.dao.UserDao;
@@ -7,6 +7,7 @@ import backend.models.team.Team;
 import backend.models.team.TeamRole;
 import backend.models.team.UserTeam;
 import backend.models.user.User;
+import backend.services.UserTeamService;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -20,7 +21,7 @@ import java.util.UUID;
 
 @Log4j2
 @Service
-public class UserTeamServiceImpl implements UserTeamService {
+public class UserTeamServiceImpl implements UserTeamService{
 
     private final UserTeamDao userTeamDao;
     private final TeamDao teamDao;
