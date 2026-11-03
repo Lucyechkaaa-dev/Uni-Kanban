@@ -3,6 +3,7 @@ package launcher;
 import backend.config.Config;
 import backend.config.Env;
 import backend.ui.ConsoleMenu;
+import backend.utils.HibernateFactory;
 import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -19,6 +20,8 @@ public class CompileLauncher {
 	public static void launch(boolean dev, String[] args) {
 		Env.setup(dev);
 		printBanner(Env.getConfig());
+		HibernateFactory.getSessionFactory();
+		Runtime.getRuntime().addShutdownHook(new Thread(HibernateFactory::shutdown));
 		SpringApplication.run(Main.class, args);
 		ConsoleMenu.init();
 	}

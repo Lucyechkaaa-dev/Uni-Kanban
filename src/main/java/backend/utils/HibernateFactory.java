@@ -79,4 +79,12 @@ public final class HibernateFactory{
 			log.info("Hibernate SessionFactory closed");
 		}
 	}
+	/** Test hook: lets tests in this package plug in a SessionFactory built on
+	 an in-memory database. */
+	static void setSessionFactoryForTest(SessionFactory factory){
+		synchronized(HibernateFactory.class){
+			sessionFactory = factory;
+		}
+	}
+
 }

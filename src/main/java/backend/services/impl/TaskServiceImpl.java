@@ -178,6 +178,9 @@ public class TaskServiceImpl implements TaskService{
 			assertTableOwner(table, operatorId);
 		}
 		TaskList list = new TaskList(name.trim(), table);
+		if (table != null) {
+			list.setPosition(taskListDao.nextPositionInBoard(table.getId()));
+		}
 		taskListDao.save(list);
 		log.info("Created TaskList '{}' (id={}) in table {}", list.getName(), list.getId(), tableId);
 		return list;
@@ -265,10 +268,11 @@ public class TaskServiceImpl implements TaskService{
 		TaskList list = listId != null ? getList(listId) : null;
 
 		Task task = new Task(title.trim(), description != null ? description.trim() : null, user, list);
-		if (list != null && list.getTasks() != null) {
-			task.setPosition(list.getTasks().size());
-		}
-		taskDao.save(task);
+//		if (list != null) {
+//			task.setPosition(taskDao.nextPositionInList(list.getId()));
+//		}
+//		taskDao.save(task);
+		taskDao.saveInList(task);
 		log.info("Created Task '{}' (id={})", task.getTitle(), task.getId());
 		return task;
 	}
@@ -278,7 +282,7 @@ public class TaskServiceImpl implements TaskService{
 		Objects.requireNonNull(task, "Task cannot be null");
 		validateNotBlank(task.getTitle(), "Task title cannot be empty");
 		task.setTitle(task.getTitle().trim());
-		taskDao.save(task);
+		taskDao.saveInList(task);
 		log.info("Created Task entity '{}' (id={})", task.getTitle(), task.getId());
 		return task;
 	}
@@ -400,8 +404,10 @@ public class TaskServiceImpl implements TaskService{
 		task.setTaskListParent(targetList);
 		if (position >= 0) {
 			task.setPosition(position);
-		} else if (targetList != null && targetList.getTasks() != null) {
-			task.setPosition(targetList.getTasks().size());
+//		} else if (targetList != null && targetList.getTasks() != null) {
+//			task.setPosition(targetList.getTasks().size());
+		} else if (targetList != null) {
+			task.setPosition(taskDao.nextPositionInList(targetList.getId()));
 		} else {
 			task.setPosition(0);
 		}

@@ -15,97 +15,111 @@ import java.util.UUID;
 @Repository
 public class TaskListDao {
 
-	public TaskList findById(UUID id) {
-		if (id == null) return null;
-		log.info("Search task list for id {}", id);
-		try (Session session = HibernateFactory.getSessionFactory().openSession()) {
-			TaskList list = session.find(TaskList.class, id);
-			if (list != null) {
-				log.info("TaskList found: id={}, name={}", list.getId(), list.getName());
-				return list;
-			}
-			log.info("TaskList with id {} not found", id);
-			return null;
-		}
-	}
+    public TaskList findById(UUID id) {
+        if (id == null) return null;
+        log.info("Search task list for id {}", id);
+        try (Session session = HibernateFactory.getSessionFactory().openSession()) {
+            TaskList list = session.createQuery(
+                            "select l from TaskList l left join fetch l.board b left join fetch b.user where l.id = :id",
+                            TaskList.class)
+                    .setParameter("id", id)
+                    .uniqueResult();
+            if (list != null) {
+                log.info("TaskList found: id={}, name={}", list.getId(), list.getName());
+                return list;
+            }
+            log.info("TaskList with id {} not found", id);
+            return null;
+        }
+    }
 
-	public void save(TaskList taskList) {
-		Transaction tx = null;
-		try (Session session = HibernateFactory.getSessionFactory().openSession()) {
-			tx = session.beginTransaction();
-			session.persist(taskList);
-			tx.commit();
-			log.info("TaskList saved with id: {}", taskList.getId());
-		} catch (Exception e) {
-			if (tx != null && tx.isActive()) tx.rollback();
-			log.error("TaskList save failed: {}", taskList, e);
-			throw e;
-		}
-	}
+    public void save(TaskList taskList) {
+        Transaction tx = null;
+        try (Session session = HibernateFactory.getSessionFactory().openSession()) {
+            tx = session.beginTransaction();
+            session.persist(taskList);
+            tx.commit();
+            log.info("TaskList saved with id: {}", taskList.getId());
+        } catch (Exception e) {
+            if (tx != null && tx.isActive()) tx.rollback();
+            log.error("TaskList save failed: {}", taskList, e);
+            throw e;
+        }
+    }
 
-	public void update(TaskList taskList) {
-		Transaction tx = null;
-		try (Session session = HibernateFactory.getSessionFactory().openSession()) {
-			tx = session.beginTransaction();
-			session.merge(taskList);
-			tx.commit();
-			log.info("TaskList updated with id: {}", taskList.getId());
-		} catch (Exception e) {
-			if (tx != null && tx.isActive()) tx.rollback();
-			log.error("TaskList update failed: {}", taskList, e);
-			throw e;
-		}
-	}
+    public void update(TaskList taskList) {
+        Transaction tx = null;
+        try (Session session = HibernateFactory.getSessionFactory().openSession()) {
+            tx = session.beginTransaction();
+            session.merge(taskList);
+            tx.commit();
+            log.info("TaskList updated with id: {}", taskList.getId());
+        } catch (Exception e) {
+            if (tx != null && tx.isActive()) tx.rollback();
+            log.error("TaskList update failed: {}", taskList, e);
+            throw e;
+        }
+    }
 
-	public void delete(TaskList taskList) {
-		Transaction tx = null;
-		try (Session session = HibernateFactory.getSessionFactory().openSession()) {
-			tx = session.beginTransaction();
-			session.remove(session.contains(taskList) ? taskList : session.merge(taskList));
-			tx.commit();
-			log.info("TaskList deleted with id: {}", taskList.getId());
-		} catch (Exception e) {
-			if (tx != null && tx.isActive()) tx.rollback();
-			log.error("TaskList deletion failed: {}", taskList, e);
-			throw e;
-		}
-	}
+    public void delete(TaskList taskList) {
+        Transaction tx = null;
+        try (Session session = HibernateFactory.getSessionFactory().openSession()) {
+            tx = session.beginTransaction();
+            session.remove(session.contains(taskList) ? taskList : session.merge(taskList));
+            tx.commit();
+            log.info("TaskList deleted with id: {}", taskList.getId());
+        } catch (Exception e) {
+            if (tx != null && tx.isActive()) tx.rollback();
+            log.error("TaskList deletion failed: {}", taskList, e);
+            throw e;
+        }
+    }
 
-	public boolean deleteById(UUID id) {
-		if (id == null) return false;
-		log.info("Delete task list for id {}", id);
-		Transaction tx = null;
-		try (Session session = HibernateFactory.getSessionFactory().openSession()) {
-			tx = session.beginTransaction();
-			TaskList list = session.find(TaskList.class, id);
-			if (list != null) {
-				session.remove(list);
-				tx.commit();
-				log.info("TaskList deleted with id: {}", id);
-				return true;
-			}
-			tx.commit();
-			log.info("TaskList with id {} not found for deletion", id);
-			return false;
-		} catch (Exception e) {
-			if (tx != null && tx.isActive()) tx.rollback();
-			log.error("TaskList deletion failed for id: {}", id, e);
-			throw e;
-		}
-	}
+    public boolean deleteById(UUID id) {
+        if (id == null) return false;
+        log.info("Delete task list for id {}", id);
+        Transaction tx = null;
+        try (Session session = HibernateFactory.getSessionFactory().openSession()) {
+            tx = session.beginTransaction();
+            TaskList list = session.find(TaskList.class, id);
+            if (list != null) {
+                session.remove(list);
+                tx.commit();
+                log.info("TaskList deleted with id: {}", id);
+                return true;
+            }
+            tx.commit();
+            log.info("TaskList with id {} not found for deletion", id);
+            return false;
+        } catch (Exception e) {
+            if (tx != null && tx.isActive()) tx.rollback();
+            log.error("TaskList deletion failed for id: {}", id, e);
+            throw e;
+        }
+    }
 
-	public List<TaskList> findAll() {
-		try (Session session = HibernateFactory.getSessionFactory().openSession()) {
-			return session.createQuery("from TaskList", TaskList.class).list();
-		}
-	}
+    public List<TaskList> findAll() {
+        try (Session session = HibernateFactory.getSessionFactory().openSession()) {
+            return session.createQuery("from TaskList", TaskList.class).list();
+        }
+    }
 
-	public List<TaskList> findByTableId(UUID tableId) {
-		if (tableId == null) return Collections.emptyList();
-		try (Session session = HibernateFactory.getSessionFactory().openSession()) {
-			return session.createQuery("from TaskList l where l.taskTable.id = :tableId", TaskList.class)
-					.setParameter("tableId", tableId)
-					.list();
-		}
-	}
+    public int nextPositionInBoard(UUID boardId) {
+        if (boardId == null) return 0;
+        try (Session session = HibernateFactory.getSessionFactory().openSession()) {
+            Integer max = session.createQuery("select max(l.position) from TaskList l where l.board.id = :id", Integer.class)
+                    .setParameter("id", boardId)
+                    .uniqueResult();
+            return max == null ? 0 : max + 1;
+        }
+    }
+
+    public List<TaskList> findByTableId(UUID tableId) {
+        if (tableId == null) return Collections.emptyList();
+        try (Session session = HibernateFactory.getSessionFactory().openSession()) {
+            return session.createQuery("from TaskList l where l.board.id = :tableId order by l.position asc, l.id asc", TaskList.class)
+                    .setParameter("tableId", tableId)
+                    .list();
+        }
+    }
 }

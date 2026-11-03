@@ -8,6 +8,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 import lombok.ToString;
+import org.hibernate.annotations.ColumnDefault;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -27,6 +28,13 @@ public class Board{
     @Column(nullable = false)
     private String name;
 
+    @Column(columnDefinition = "TEXT")
+    private String description;
+
+    @Column(name = "last_task_number", nullable = false)
+    @ColumnDefault("0")
+    private int lastTaskNumber = 0;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id")
     @ToString.Exclude
@@ -39,7 +47,8 @@ public class Board{
     @EqualsAndHashCode.Exclude
     private Team team;
 
-    @OneToMany(mappedBy = "taskTable", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "board", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OrderBy("position ASC, id ASC")
     @ToString.Exclude
     @EqualsAndHashCode.Exclude
     private List<TaskList> taskLists = new ArrayList<>();
@@ -108,5 +117,12 @@ public class Board{
     public void removeTaskList(TaskList taskList) {
         taskLists.remove(taskList);
         taskList.setBoard(null);
+    }
+
+    public void addDefaultColumns() {
+        int position = 0;
+        for (DefaultColumns.ColumnSpec spec : DefaultColumns.ALL) {
+            addTaskList(new TaskList(spec.name(), this, position++, spec.color()));
+        }
     }
 }

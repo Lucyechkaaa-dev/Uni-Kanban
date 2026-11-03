@@ -58,16 +58,11 @@ export default function BoardView({ theme, toggleTheme, onLogout }) {
     const availableTags = ['#Frontend', '#Backend', '#API', '#DevOps', '#Design', '#Custom'];
     const priorities = ['Low', 'Medium', 'High'];
 
-    //взяти,кинути
     const handleDragStart = (e, taskId) => {
-        // Firefox не начинает перетаскивание, если в dragstart не записаны данные.
-        // Свой тип нужен, чтобы карточку нельзя было «уронить» текстом в поле ввода.
         e.dataTransfer.setData('application/x-kanban-task', taskId);
         e.dataTransfer.effectAllowed = 'move';
         setDraggedTaskId(taskId);
     };
-    // Перетаскивание закончилось (бросили, нажали Esc или отпустили вне доски) — сбрасываем состояние,
-    // иначе «взведённая» карточка могла переехать от любого постороннего drop
     const handleDragEnd = () => setDraggedTaskId(null);
     const handleDragOver = (e) => e.preventDefault();
     const handleDrop = (targetColumnId) => {
@@ -75,7 +70,6 @@ export default function BoardView({ theme, toggleTheme, onLogout }) {
 
         const sourceColumn = columns.find(col => col.tasks.some(t => t.id === draggedTaskId));
 
-        // Бросили в ту же колонку — ничего не меняем (раньше карточка при этом улетала в конец списка)
         if (!sourceColumn || sourceColumn.id === targetColumnId) {
             setDraggedTaskId(null);
             return;

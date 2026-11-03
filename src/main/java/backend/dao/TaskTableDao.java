@@ -19,7 +19,10 @@ public class TaskTableDao {
 		if (id == null) return null;
 		log.info("Search task table for id {}", id);
 		try (Session session = HibernateFactory.getSessionFactory().openSession()) {
-			Board table = session.find(Board.class, id);
+			Board table = session.createQuery(
+							"select b from Board b left join fetch b.user where b.id = :id", Board.class)
+					.setParameter("id", id)
+					.uniqueResult();
 			if (table != null) {
 				log.info("TaskTable found: id={}, name={}", table.getId(), table.getName());
 				return table;

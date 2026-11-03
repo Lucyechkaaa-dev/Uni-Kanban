@@ -94,6 +94,7 @@ public class UserDao{
 		Transaction tx = null;
 		try(Session session = HibernateFactory.getSessionFactory().openSession()){
 			tx = session.beginTransaction();
+			unassignTasks(session, user.getId());
 			session.remove(session.contains(user) ? user : session.merge(user));
 			tx.commit();
 			log.info("User deleted with id: {}", user.getId());
@@ -112,6 +113,7 @@ public class UserDao{
 			tx = session.beginTransaction();
 			User user = session.find(User.class, id);
 			if(user != null){
+				unassignTasks(session, id);
 				session.remove(user);
 				tx.commit();
 				log.info("User deleted with id: {}", id);
@@ -126,6 +128,12 @@ public class UserDao{
 			log.error("User deletion failed for id: {}", id, e);
 			throw e;
 		}
+	}
+
+	private static void unassignTasks(Session session, UUID userId){
+		session.createMutationQuery("update Task t set t.userOwner = null where t.userOwner.id = :id")
+				.setParameter("id", userId)
+				.executeUpdate();
 	}
 
 	public List<User> searchByUsername(String query) {
