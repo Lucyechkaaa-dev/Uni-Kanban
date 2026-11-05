@@ -20,7 +20,7 @@ public class TaskTableDao {
 		log.info("Search task table for id {}", id);
 		try (Session session = HibernateFactory.getSessionFactory().openSession()) {
 			Board table = session.createQuery(
-							"select b from Board b left join fetch b.user where b.id = :id", Board.class)
+							"select b from Board b left join fetch b.user left join fetch b.team where b.id = :id", Board.class)
 					.setParameter("id", id)
 					.uniqueResult();
 			if (table != null) {

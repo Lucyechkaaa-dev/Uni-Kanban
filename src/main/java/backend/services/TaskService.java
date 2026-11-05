@@ -15,8 +15,6 @@ public interface TaskService {
 
     Board createTable(String name, UUID userId);
 
-    Board createTable(String name);
-
     Optional<Board> findTable(UUID id);
 
     Board getTable(UUID id);
@@ -25,15 +23,13 @@ public interface TaskService {
 
     List<Board> findAllTables();
 
-    Board renameTable(UUID tableId, String newName);
-
     Board renameTable(UUID tableId, String newName, UUID operatorId);
-
-    boolean deleteTable(UUID tableId);
 
     boolean deleteTable(UUID tableId, UUID operatorId);
 
-    // ==================== Role Management Operations ====================
+    // ==================== Access / Role Management Operations ====================
+
+    Access accessLevel(UUID tableId, UUID userId);
 
     void assignMemberRole(UUID tableId, UUID targetUserId, String role, UUID operatorId);
 
@@ -43,17 +39,9 @@ public interface TaskService {
 
     Map<UUID, String> getMemberRoles(UUID tableId);
 
-    void addUserRole(UUID tableId, UUID targetUserId, String role, UUID operatorId);
-
-    void removeUserRole(UUID tableId, UUID targetUserId, String role, UUID operatorId);
-
     // ==================== Task List Operations ====================
 
-    TaskList createList(String name, UUID tableId);
-
     TaskList createList(String name, UUID tableId, UUID operatorId);
-
-    TaskList createList(String name);
 
     Optional<TaskList> findList(UUID id);
 
@@ -61,25 +49,13 @@ public interface TaskService {
 
     List<TaskList> findListsByTable(UUID tableId);
 
-    TaskList renameList(UUID listId, String newName);
-
     TaskList renameList(UUID listId, String newName, UUID operatorId);
-
-    boolean deleteList(UUID listId);
 
     boolean deleteList(UUID listId, UUID operatorId);
 
     // ==================== Task Operations ====================
 
-    Task createTask(String title);
-
-    Task createTask(String title, String description);
-
-    Task createTask(String title, String description, UUID listId);
-
-    Task createTask(String title, String description, UUID userId, UUID listId);
-
-    Task createTask(Task task);
+    Task createTask(String title, String description, UUID assigneeId, UUID listId, UUID operatorId);
 
     Optional<Task> findTask(UUID id);
 
@@ -93,31 +69,19 @@ public interface TaskService {
 
     List<Task> findAllTasks();
 
-    Task updateTask(UUID id, String newTitle, String newDescription);
-
     Task updateTask(UUID id, String newTitle, String newDescription, UUID operatorId);
 
-    Task updateTask(Task task);
-
-    Task assignTask(UUID taskId, UUID userId);
+    /** Copies title, description, priority, tag and due date onto the stored card; column and board cannot be changed here. */
+    Task updateTask(Task task, UUID operatorId);
 
     Task assignTask(UUID taskId, UUID userId, UUID operatorId);
 
-    Task unassignTask(UUID taskId);
-
     Task unassignTask(UUID taskId, UUID operatorId);
 
-    Task moveTask(UUID taskId, UUID targetListId);
-
-    Task moveTask(UUID taskId, UUID targetListId, int position);
-
+    /** position -1 = to the end of the column. A card stays on its own board. */
     Task moveTask(UUID taskId, UUID targetListId, int position, UUID operatorId);
 
-    Task reorderTask(UUID taskId, int newPosition);
-
     Task reorderTask(UUID taskId, int newPosition, UUID operatorId);
-
-    boolean deleteTask(UUID taskId);
 
     boolean deleteTask(UUID taskId, UUID operatorId);
 

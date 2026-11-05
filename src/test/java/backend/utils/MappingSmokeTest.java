@@ -90,6 +90,7 @@ class MappingSmokeTest {
 
         assertDoesNotThrow(() -> {
             users.findByUsername("nobody");
+            users.findByEmail("nobody@mail.test");
             users.findById(id);
             users.searchByUsername("no");
             boards.findById(id);
@@ -132,8 +133,8 @@ class MappingSmokeTest {
         assertEquals("#94a3b8", lists.get(0).getColor());
 
         TaskService service = new TaskServiceImpl();
-        Task first = service.createTask("first", "details", owner.getId(), lists.get(0).getId());
-        Task second = service.createTask("second", null, owner.getId(), lists.get(0).getId());
+        Task first = service.createTask("first", "details", owner.getId(), lists.get(0).getId(), owner.getId());
+        Task second = service.createTask("second", null, owner.getId(), lists.get(0).getId(), owner.getId());
 
         assertEquals(1, first.getNumber());
         assertEquals(2, second.getNumber());
@@ -154,7 +155,7 @@ class MappingSmokeTest {
         List<TaskList> lists = new TaskListDao().findByTableId(board.getId());
         TaskService service = new TaskServiceImpl();
 
-        Task task = service.createTask("card", null, owner.getId(), lists.get(0).getId());
+        Task task = service.createTask("card", null, owner.getId(), lists.get(0).getId(), owner.getId());;
 
         Task moved = service.moveTask(task.getId(), lists.get(1).getId(), -1, owner.getId());
         assertEquals(0, moved.getPosition());
@@ -174,11 +175,11 @@ class MappingSmokeTest {
         List<TaskList> lists = new TaskListDao().findByTableId(board.getId());
         TaskService service = new TaskServiceImpl();
 
-        Task task = service.createTask("card", null, owner.getId(), lists.get(0).getId());
+        Task task = service.createTask("card", null, owner.getId(), lists.get(0).getId(), owner.getId());
         task.setPriority(Priority.HIGH);
         task.setTag("Frontend");
         task.setDueDate(LocalDate.of(2026, 11, 5));
-        service.updateTask(task);
+        service.updateTask(task, owner.getId());
 
         Task stored = new TaskDao().findById(task.getId());
         assertEquals(Priority.HIGH, stored.getPriority());
@@ -209,8 +210,9 @@ class MappingSmokeTest {
         User assignee = newUser("assignee");
         Board board = newBoard(owner);
         List<TaskList> lists = new TaskListDao().findByTableId(board.getId());
-        Task task = new TaskServiceImpl().createTask("card", null, assignee.getId(), lists.get(0).getId());
-
+        TaskService service = new TaskServiceImpl();
+        service.assignMemberRole(board.getId(), assignee.getId(), "MEMBER", owner.getId());
+        Task task = service.createTask("card", null, assignee.getId(), lists.get(0).getId(), owner.getId());
         assertTrue(new UserDao().deleteById(assignee.getId()));
 
         Task stored = new TaskDao().findById(task.getId());

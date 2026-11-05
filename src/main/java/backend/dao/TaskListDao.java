@@ -20,7 +20,7 @@ public class TaskListDao {
         log.info("Search task list for id {}", id);
         try (Session session = HibernateFactory.getSessionFactory().openSession()) {
             TaskList list = session.createQuery(
-                            "select l from TaskList l left join fetch l.board b left join fetch b.user where l.id = :id",
+                            "select l from TaskList l left join fetch l.board b left join fetch b.user left join fetch b.team where l.id = :id",
                             TaskList.class)
                     .setParameter("id", id)
                     .uniqueResult();

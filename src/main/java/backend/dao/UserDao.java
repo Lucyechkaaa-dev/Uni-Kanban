@@ -29,6 +29,15 @@ public class UserDao{
 		}
 	}
 
+	public User findByEmail(String email){
+		log.info("Search user by email");
+		try (Session session = HibernateFactory.getSessionFactory().openSession()) {
+			return session.createQuery("from User u where u.email = :email", User.class)
+					.setParameter("email", email)
+					.uniqueResult();
+		}
+	}
+
 	public User findById(UUID id){
 		log.info("Search user for id {}", id);
 		try(Session session = HibernateFactory.getSessionFactory().openSession()){

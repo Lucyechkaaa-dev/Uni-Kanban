@@ -22,7 +22,7 @@ public class TaskDao {
 		try (Session session = HibernateFactory.getSessionFactory().openSession()) {
 			Task task = session.createQuery(
 							"select t from Task t left join fetch t.userOwner left join fetch t.taskListParent l "
-									+ "left join fetch l.board b left join fetch b.user where t.id = :id",
+									+ "left join fetch l.board b left join fetch b.user left join fetch b.team where t.id = :id",
 							Task.class)
 					.setParameter("id", id)
 					.uniqueResult();
