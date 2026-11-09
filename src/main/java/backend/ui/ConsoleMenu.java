@@ -1,16 +1,21 @@
 package backend.ui;
 
-import lombok.NoArgsConstructor;
+import org.springframework.stereotype.Component;
 
 import java.util.Scanner;
 
-@NoArgsConstructor
+@Component
 public class ConsoleMenu {
-    private final static Scanner sc = new Scanner(System.in);
-    private final static UserMenu userMenu = new UserMenu();
-    private final static ImportExportMenu importExportMenu = new ImportExportMenu();
+    private final Scanner sc = new Scanner(System.in);
+    private final UserMenu userMenu;
+    private final ImportExportMenu importExportMenu;
 
-    public static void init() {
+    public ConsoleMenu(UserMenu userMenu, ImportExportMenu importExportMenu) {
+        this.userMenu = userMenu;
+        this.importExportMenu = importExportMenu;
+    }
+
+    public void init() {
         while (true) {
             System.out.println("""
                     

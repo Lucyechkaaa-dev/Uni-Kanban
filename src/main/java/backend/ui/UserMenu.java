@@ -2,18 +2,21 @@ package backend.ui;
 
 import backend.models.user.User;
 import backend.services.UserService;
-import backend.services.impl.UserServiceImpl;
-import lombok.NoArgsConstructor;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.UUID;
 
-@NoArgsConstructor
+@Component
 public class UserMenu {
-    private final UserService userService = new UserServiceImpl();
+    private final UserService userService;
     private final Scanner sc = new Scanner(System.in);
+
+    public UserMenu(UserService userService) {
+        this.userService = userService;
+    }
 
     public void initUserMenu() {
         while (true) {

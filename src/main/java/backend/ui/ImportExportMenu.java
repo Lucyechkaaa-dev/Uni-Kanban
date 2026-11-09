@@ -4,21 +4,25 @@ import backend.dao.TeamDao;
 import backend.models.task.Board;
 import backend.models.team.Team;
 import backend.export.impl.KanbanImportExportService;
-import backend.export.KanbanImportExportServiceImpl;
-import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
+import org.springframework.stereotype.Component;
 
 import java.io.File;
 import java.util.Scanner;
 import java.util.UUID;
 
 @Log4j2
-@NoArgsConstructor
+@Component
 public class ImportExportMenu {
 
-    private final KanbanImportExportService importExportService = new KanbanImportExportServiceImpl();
-    private final TeamDao teamDao = new TeamDao();
+    private final KanbanImportExportService importExportService;
+    private final TeamDao teamDao;
     private final Scanner sc = new Scanner(System.in);
+
+    public ImportExportMenu(KanbanImportExportService importExportService, TeamDao teamDao) {
+        this.importExportService = importExportService;
+        this.teamDao = teamDao;
+    }
 
     public void initMenu() {
         while (true) {

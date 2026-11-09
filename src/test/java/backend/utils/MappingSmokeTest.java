@@ -70,6 +70,12 @@ class MappingSmokeTest {
         return board;
     }
 
+    /** Services are container singletons; tests wire the same constructor Spring uses. */
+    private static TaskService newTaskService() {
+        return new TaskServiceImpl(new TaskDao(), new TaskListDao(), new TaskTableDao(),
+                new UserDao(), new UserTeamDao());
+    }
+
     @Test
     @DisplayName("All six entities are registered in hibernate.cfg.xml")
     void allEntitiesAreMapped() {
@@ -132,7 +138,7 @@ class MappingSmokeTest {
         assertEquals(List.of(0, 1, 2, 3), lists.stream().map(TaskList::getPosition).toList());
         assertEquals("#94a3b8", lists.get(0).getColor());
 
-        TaskService service = new TaskServiceImpl();
+        TaskService service = newTaskService();
         Task first = service.createTask("first", "details", owner.getId(), lists.get(0).getId(), owner.getId());
         Task second = service.createTask("second", null, owner.getId(), lists.get(0).getId(), owner.getId());
 
@@ -153,7 +159,7 @@ class MappingSmokeTest {
         User owner = newUser("owner");
         Board board = newBoard(owner);
         List<TaskList> lists = new TaskListDao().findByTableId(board.getId());
-        TaskService service = new TaskServiceImpl();
+        TaskService service = newTaskService();
 
         Task task = service.createTask("card", null, owner.getId(), lists.get(0).getId(), owner.getId());;
 
@@ -173,7 +179,7 @@ class MappingSmokeTest {
         User owner = newUser("owner");
         Board board = newBoard(owner);
         List<TaskList> lists = new TaskListDao().findByTableId(board.getId());
-        TaskService service = new TaskServiceImpl();
+        TaskService service = newTaskService();
 
         Task task = service.createTask("card", null, owner.getId(), lists.get(0).getId(), owner.getId());
         task.setPriority(Priority.HIGH);
@@ -210,7 +216,7 @@ class MappingSmokeTest {
         User assignee = newUser("assignee");
         Board board = newBoard(owner);
         List<TaskList> lists = new TaskListDao().findByTableId(board.getId());
-        TaskService service = new TaskServiceImpl();
+        TaskService service = newTaskService();
         service.assignMemberRole(board.getId(), assignee.getId(), "MEMBER", owner.getId());
         Task task = service.createTask("card", null, assignee.getId(), lists.get(0).getId(), owner.getId());
         assertTrue(new UserDao().deleteById(assignee.getId()));
@@ -218,5 +224,23 @@ class MappingSmokeTest {
         Task stored = new TaskDao().findById(task.getId());
         assertNotNull(stored);
         assertNull(stored.getUserOwner());
+        assertNull(new TaskTableDao().findById(board.getId()).getMemberRole(assignee.getId()));
+    }
+
+    @Test
+    @DisplayName("Default columns are added only once")
+    void defaultColumnsAreIdempotent() {
+        Board board = new Board("b");
+        board.addDefaultColumns();
+        board.addDefaultColumns();
+        assertEquals(4, board.getTaskLists().size());
+    }
+
+    @Test
+    @DisplayName("Exposed member roles cannot be mutated from outside the entity")
+    void memberRolesAreReadOnly() {
+        Board board = new Board("b");
+        assertThrows(UnsupportedOperationException.class,
+                () -> board.getMemberRoles().put(UUID.randomUUID(), "MEMBER"));
     }
 }

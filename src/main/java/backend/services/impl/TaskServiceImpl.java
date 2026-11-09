@@ -36,14 +36,6 @@ public class TaskServiceImpl implements TaskService{
 	private final UserDao userDao;
 	private final UserTeamDao userTeamDao;
 
-	public TaskServiceImpl() {
-		this(new TaskDao(), new TaskListDao(), new TaskTableDao(), new UserDao(), new UserTeamDao());
-	}
-
-	public static TaskService create() {
-		return new TaskServiceImpl();
-	}
-
 	// ==================== Task Table Operations ====================
 
 	@Override

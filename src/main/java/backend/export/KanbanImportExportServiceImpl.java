@@ -42,10 +42,6 @@ public class KanbanImportExportServiceImpl implements KanbanImportExportService{
         this.objectMapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
     }
 
-    public KanbanImportExportServiceImpl() {
-        this(new UserDao());
-    }
-
     @Override
     public String exportToJson(Board table) {
         Objects.requireNonNull(table, "TaskTable cannot be null for export");

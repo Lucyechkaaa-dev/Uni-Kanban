@@ -43,7 +43,6 @@ public class UserTeam {
     public UserTeam(User user, Team team) {
         this.user = user;
         this.team = team;
-        this.role = TeamRole.MEMBER;
     }
 
     public UserTeam(User user, Team team, TeamRole role) {

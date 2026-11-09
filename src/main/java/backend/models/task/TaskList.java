@@ -31,7 +31,7 @@ public class TaskList{
 	private String color = "#94a3b8";
 
 	@ManyToOne(fetch = FetchType.LAZY)
-	@JoinColumn(name = "task_table_id")
+	@JoinColumn(name = "board_id")
 	@ToString.Exclude
 	@EqualsAndHashCode.Exclude
 	private Board board;

@@ -8,6 +8,7 @@ import lombok.AccessLevel;
 import lombok.NoArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.boot.SpringApplication;
+import org.springframework.context.ConfigurableApplicationContext;
 
 @Log4j2
 @NoArgsConstructor(access = AccessLevel.PRIVATE)
@@ -22,8 +23,12 @@ public class CompileLauncher {
 		printBanner(Env.getConfig());
 		HibernateFactory.getSessionFactory();
 		Runtime.getRuntime().addShutdownHook(new Thread(HibernateFactory::shutdown));
-		SpringApplication.run(Main.class, args);
-		ConsoleMenu.init();
+		ConfigurableApplicationContext context = SpringApplication.run(Main.class, args);
+		try {
+			context.getBean(ConsoleMenu.class).init();
+		} finally {
+			context.close();
+		}
 	}
 
 	public static void printBanner(Config cfg) {

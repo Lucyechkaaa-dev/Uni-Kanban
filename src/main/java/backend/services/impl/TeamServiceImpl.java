@@ -34,10 +34,6 @@ public class TeamServiceImpl implements TeamService{
         this.userTeamDao = Objects.requireNonNull(userTeamDao, "UserTeamDao must not be null");
     }
 
-    public TeamServiceImpl() {
-        this(new TeamDao(), new UserDao(), new UserTeamDao());
-    }
-
     @Override
     public Team createTeam(String name, String description, UUID ownerId) {
         validateTeamName(name);

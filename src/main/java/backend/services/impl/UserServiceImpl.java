@@ -33,10 +33,6 @@ public class UserServiceImpl implements UserService{
 
     private final UserDao userDao;
 
-    public UserServiceImpl() {
-        this(new UserDao());
-    }
-
     @Override
     public User register(String username, String email, String password) {
         log.info("Attempting to register user with username: {}", username);
