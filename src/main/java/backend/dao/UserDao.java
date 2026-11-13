@@ -1,5 +1,6 @@
 package backend.dao;
 
+import backend.models.task.Board;
 import backend.models.user.User;
 import backend.utils.HibernateFactory;
 import lombok.extern.log4j.Log4j2;
@@ -26,6 +27,15 @@ public class UserDao{
 			}
 			log.info("User with username {} not found", username);
 			return null;
+		}
+	}
+
+	public User findByEmail(String email){
+		log.info("Search user by email");
+		try (Session session = HibernateFactory.getSessionFactory().openSession()) {
+			return session.createQuery("from User u where u.email = :email", User.class)
+					.setParameter("email", email)
+					.uniqueResult();
 		}
 	}
 
@@ -94,6 +104,7 @@ public class UserDao{
 		Transaction tx = null;
 		try(Session session = HibernateFactory.getSessionFactory().openSession()){
 			tx = session.beginTransaction();
+			unassignTasks(session, user.getId());
 			session.remove(session.contains(user) ? user : session.merge(user));
 			tx.commit();
 			log.info("User deleted with id: {}", user.getId());
@@ -112,6 +123,8 @@ public class UserDao{
 			tx = session.beginTransaction();
 			User user = session.find(User.class, id);
 			if(user != null){
+				unassignTasks(session, id);
+				unassignBoardRoles(session, id);
 				session.remove(user);
 				tx.commit();
 				log.info("User deleted with id: {}", id);
@@ -126,6 +139,20 @@ public class UserDao{
 			log.error("User deletion failed for id: {}", id, e);
 			throw e;
 		}
+	}
+
+	private static void unassignTasks(Session session, UUID userId){
+		session.createMutationQuery("update Task t set t.userOwner = null where t.userOwner.id = :id")
+				.setParameter("id", userId)
+				.executeUpdate();
+	}
+
+	private static void unassignBoardRoles(Session session, UUID userId){
+		List<Board> boards = session.createQuery(
+						"select distinct b from Board b join b.memberRoles r where key(r) = :id", Board.class)
+				.setParameter("id", userId)
+				.list();
+		boards.forEach(board -> board.removeMemberRole(userId));
 	}
 
 	public List<User> searchByUsername(String query) {

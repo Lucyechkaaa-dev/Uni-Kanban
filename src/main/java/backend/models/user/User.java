@@ -13,11 +13,7 @@ import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.extern.log4j.Log4j2;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
+import java.util.*;
 
 @AllArgsConstructor
 @NoArgsConstructor
@@ -32,14 +28,18 @@ public class User {
 	@Id
 	private UUID id;
 
-	@Column(nullable = false)
+	@Column(nullable = false, unique = true)
 	private String username;
+
+	@Column(unique = true, length = 254)
+	private String email;
 
 	@Column(nullable = false)
 	@ToString.Exclude
 	private String password;
 
-	@OneToMany(mappedBy = "userOwner", cascade = CascadeType.ALL, orphanRemoval = true)
+	//видалення користувача не повинно призводити до видалення закріплених за ним карток (в UserDao спочатку з них знімається прив’язка до користувача)
+	@OneToMany(mappedBy = "userOwner")
 	@ToString.Exclude
 	@EqualsAndHashCode.Exclude
 	private List<Task> tasks = new ArrayList<>();
@@ -76,6 +76,10 @@ public class User {
 	public User(String username, String password, Set<String> roles) {
 		this(username, password);
 		if (roles != null) roles.forEach(this::addRole);
+	}
+
+	public void setEmail(String email) {
+		this.email = email == null || email.isBlank() ? null : email.trim().toLowerCase(Locale.ROOT);
 	}
 
 	public void addRole(String role) {

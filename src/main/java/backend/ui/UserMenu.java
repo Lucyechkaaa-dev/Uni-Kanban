@@ -2,18 +2,21 @@ package backend.ui;
 
 import backend.models.user.User;
 import backend.services.UserService;
-import backend.services.impl.UserServiceImpl;
-import lombok.NoArgsConstructor;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.Optional;
 import java.util.Scanner;
 import java.util.UUID;
 
-@NoArgsConstructor
+@Component
 public class UserMenu {
-    private final UserService userService = new UserServiceImpl();
+    private final UserService userService;
     private final Scanner sc = new Scanner(System.in);
+
+    public UserMenu(UserService userService) {
+        this.userService = userService;
+    }
 
     public void initUserMenu() {
         while (true) {
@@ -28,8 +31,56 @@ public class UserMenu {
             String choice = sc.nextLine().trim();
 
             switch (choice) {
-                case "1" -> searchUserMenu();
-                case "2" -> crudUserMenu();
+                case "1" -> {
+                    System.out.print("Enter username: ");
+                    String username = sc.nextLine().trim();
+                    System.out.print("Enter email: ");
+                    String email = sc.nextLine().trim();
+                    System.out.print("Enter password (at least 8 characters): ");
+                    String password = sc.nextLine();
+                    try {
+                        User created = userService.register(username, email, password);
+                        System.out.println("User created successfully! ID: " + created.getId());
+                    } catch (Exception e) {
+                        System.out.println("Error: " + e.getMessage());
+                    }
+                }
+                case "2" -> {
+                    UUID id = readUuid("Enter user ID to update: ");
+                    if (id == null) break;
+
+                    Optional<User> optionalUser = userService.findById(id);
+                    if (optionalUser.isEmpty()) {
+                        System.out.println("User not found with id: " + id);
+                        break;
+                    }
+
+                    User user = optionalUser.get();
+                    System.out.print("Enter new username (leave blank to keep '" + user.getUsername() + "'): ");
+                    String newUsername = sc.nextLine().trim();
+                    System.out.print("Enter new email (leave blank to keep '" + (user.getEmail() == null ? "none" : user.getEmail()) + "'): ");
+                    String newEmail = sc.nextLine().trim();
+                    try {
+                        userService.updateProfile(id, newUsername, newEmail);
+                        System.out.println("Profile updated successfully!");
+                    } catch (Exception e) {
+                        System.out.println("Error updating user: " + e.getMessage());
+                        break;
+                    }
+
+                    System.out.print("To change the password enter the current one (leave blank to skip): ");
+                    String oldPassword = sc.nextLine();
+                    if (!oldPassword.isEmpty()) {
+                        System.out.print("Enter new password: ");
+                        String newPassword = sc.nextLine();
+                        try {
+                            userService.changePassword(id, oldPassword, newPassword);
+                            System.out.println("Password changed successfully!");
+                        } catch (Exception e) {
+                            System.out.println("Error changing password: " + e.getMessage());
+                        }
+                    }
+                }
                 case "3" -> { return; }
                 default -> System.out.println("Invalid input");
             }
@@ -111,10 +162,12 @@ public class UserMenu {
                 case "1" -> {
                     System.out.print("Enter username: ");
                     String username = sc.nextLine().trim();
-                    System.out.print("Enter password: ");
-                    String password = sc.nextLine().trim();
+                    System.out.print("Enter email: ");
+                    String email = sc.nextLine().trim();
+                    System.out.print("Enter password (at least 8 characters): ");
+                    String password = sc.nextLine();
                     try {
-                        User created = userService.register(username, password);
+                        User created = userService.register(username, email, password);
                         System.out.println("User created successfully! ID: " + created.getId());
                     } catch (Exception e) {
                         System.out.println("Error: " + e.getMessage());
@@ -133,21 +186,27 @@ public class UserMenu {
                     User user = optionalUser.get();
                     System.out.print("Enter new username (leave blank to keep '" + user.getUsername() + "'): ");
                     String newUsername = sc.nextLine().trim();
-                    if (!newUsername.isEmpty()) {
-                        user.setUsername(newUsername);
-                    }
-
-                    System.out.print("Enter new password (leave blank to keep current): ");
-                    String newPassword = sc.nextLine().trim();
-                    if (!newPassword.isEmpty()) {
-                        user.setPassword(newPassword);
-                    }
-
+                    System.out.print("Enter new email (leave blank to keep '" + (user.getEmail() == null ? "none" : user.getEmail()) + "'): ");
+                    String newEmail = sc.nextLine().trim();
                     try {
-                        userService.updateUser(user);
-                        System.out.println("User updated successfully!");
+                        userService.updateProfile(id, newUsername, newEmail);
+                        System.out.println("Profile updated successfully!");
                     } catch (Exception e) {
                         System.out.println("Error updating user: " + e.getMessage());
+                        break;
+                    }
+
+                    System.out.print("To change the password enter the current one (leave blank to skip): ");
+                    String oldPassword = sc.nextLine();
+                    if (!oldPassword.isEmpty()) {
+                        System.out.print("Enter new password: ");
+                        String newPassword = sc.nextLine();
+                        try {
+                            userService.changePassword(id, oldPassword, newPassword);
+                            System.out.println("Password changed successfully!");
+                        } catch (Exception e) {
+                            System.out.println("Error changing password: " + e.getMessage());
+                        }
                     }
                 }
                 case "3" -> {

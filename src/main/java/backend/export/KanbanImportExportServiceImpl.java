@@ -42,10 +42,6 @@ public class KanbanImportExportServiceImpl implements KanbanImportExportService{
         this.objectMapper = new ObjectMapper().enable(SerializationFeature.INDENT_OUTPUT);
     }
 
-    public KanbanImportExportServiceImpl() {
-        this(new UserDao());
-    }
-
     @Override
     public String exportToJson(Board table) {
         Objects.requireNonNull(table, "TaskTable cannot be null for export");
@@ -373,8 +369,9 @@ public class KanbanImportExportServiceImpl implements KanbanImportExportService{
             }
         }
 
-        // 3. Fallback: lightweight representation
-        return new User(clean, "pass");
+        // 3. Not found: the card stays unassigned. Never invent an account here.
+        log.warn("Import: user '{}' not found, the card is left unassigned", clean);
+        return null;
     }
 
     private char detectDelimiter(String csv) {

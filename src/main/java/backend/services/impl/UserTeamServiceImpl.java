@@ -12,6 +12,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.io.Externalizable;
 import java.util.Collections;
 import java.util.List;
 import java.util.NoSuchElementException;
@@ -32,10 +33,6 @@ public class UserTeamServiceImpl implements UserTeamService{
         this.userTeamDao = Objects.requireNonNull(userTeamDao, "UserTeamDao must not be null");
         this.teamDao = Objects.requireNonNull(teamDao, "TeamDao must not be null");
         this.userDao = Objects.requireNonNull(userDao, "UserDao must not be null");
-    }
-
-    public UserTeamServiceImpl() {
-        this(new UserTeamDao(), new TeamDao(), new UserDao());
     }
 
     @Override

@@ -19,7 +19,11 @@ public class TaskTableDao {
 		if (id == null) return null;
 		log.info("Search task table for id {}", id);
 		try (Session session = HibernateFactory.getSessionFactory().openSession()) {
-			Board table = session.find(Board.class, id);
+			Board table = session.createQuery(
+							"select distinct b from Board b left join fetch b.user left join fetch b.team "
+									+ "left join fetch b.memberRoles where b.id = :id", Board.class)
+					.setParameter("id", id)
+					.uniqueResult();
 			if (table != null) {
 				log.info("TaskTable found: id={}, name={}", table.getId(), table.getName());
 				return table;
@@ -96,14 +100,15 @@ public class TaskTableDao {
 
 	public List<Board> findAll() {
 		try (Session session = HibernateFactory.getSessionFactory().openSession()) {
-			return session.createQuery("from Board", Board.class).list();
+			return session.createQuery("select distinct b from Board b left join fetch b.memberRoles", Board.class).list();
 		}
 	}
 
 	public List<Board> findByUserId(UUID userId) {
 		if (userId == null) return Collections.emptyList();
 		try (Session session = HibernateFactory.getSessionFactory().openSession()) {
-			return session.createQuery("from Board t where t.user.id = :userId", Board.class)
+			return session.createQuery(
+							"select distinct b from Board b left join fetch b.memberRoles where b.user.id = :userId", Board.class)
 					.setParameter("userId", userId)
 					.list();
 		}

@@ -3,6 +3,8 @@ package backend.models.task;
 import backend.models.user.User;
 import jakarta.persistence.*;
 import lombok.*;
+import org.hibernate.annotations.ColumnDefault;
+import org.hibernate.annotations.CreationTimestamp;
 
 import java.time.LocalDate;
 import java.util.UUID;
@@ -30,6 +32,21 @@ public class Task{
 
 	@Column(nullable = false)
 	private int position = 0;
+
+	@Enumerated(EnumType.STRING)
+	@Column(nullable = false)
+	@ColumnDefault("'MEDIUM'")
+	private Priority priority = Priority.MEDIUM;
+
+	@Column(name = "task_number", nullable = false)
+	@ColumnDefault("0")
+	private int number = 0;
+
+	@Column(length = 32)
+	private String tag;
+
+	@Column(name = "due_date")
+	private LocalDate dueDate;
 
 	@ManyToOne(fetch = FetchType.LAZY)
 	@JoinColumn(name = "userOwner_id")

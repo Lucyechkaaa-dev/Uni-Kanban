@@ -4,16 +4,21 @@ import backend.dao.TaskDao;
 import backend.dao.TaskListDao;
 import backend.dao.TaskTableDao;
 import backend.dao.UserDao;
+import backend.dao.UserTeamDao;
 import backend.models.task.Task;
 import backend.models.task.TaskList;
 import backend.models.task.Board;
+import backend.models.task.Priority;
+import backend.models.team.UserTeam;
 import backend.models.user.User;
+import backend.services.Access;
 import backend.services.TaskService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -31,30 +36,20 @@ public class TaskServiceImpl implements TaskService{
 	private final TaskListDao taskListDao;
 	private final TaskTableDao taskTableDao;
 	private final UserDao userDao;
+	private final UserTeamDao userTeamDao;
 
-	public TaskServiceImpl() {
-		this(new TaskDao(), new TaskListDao(), new TaskTableDao(), new UserDao());
-	}
-
-	public static TaskService create() {
-		return new TaskServiceImpl();
-	}
+	private static final int MAX_TAG_LENGTH = 32; // the tag column is varchar(32)
 
 	// ==================== Task Table Operations ====================
 
 	@Override
 	public Board createTable(String name, UUID userId) {
 		validateNotBlank(name, "Table name cannot be empty");
-		User user = userId != null ? getUserOrThrow(userId) : null;
+		User user = getUserOrThrow(userId);
 		Board table = new Board(name.trim(), user);
 		taskTableDao.save(table);
 		log.info("Created TaskTable '{}' (id={}) for user {}", table.getName(), table.getId(), userId);
 		return table;
-	}
-
-	@Override
-	public Board createTable(String name) {
-		return createTable(name, null);
 	}
 
 	@Override
@@ -78,24 +73,14 @@ public class TaskServiceImpl implements TaskService{
 	}
 
 	@Override
-	public Board renameTable(UUID tableId, String newName) {
-		return renameTable(tableId, newName, null);
-	}
-
-	@Override
 	public Board renameTable(UUID tableId, String newName, UUID operatorId) {
 		validateNotBlank(newName, "New table name cannot be empty");
 		Board table = getTable(tableId);
-		assertTableOwner(table, operatorId);
+		require(Access.MANAGE, table, operatorId);
 		table.setName(newName.trim());
 		taskTableDao.update(table);
 		log.info("Renamed TaskTable id={} to '{}' by operator {}", tableId, table.getName(), operatorId);
 		return table;
-	}
-
-	@Override
-	public boolean deleteTable(UUID tableId) {
-		return deleteTable(tableId, null);
 	}
 
 	@Override
@@ -105,32 +90,37 @@ public class TaskServiceImpl implements TaskService{
 		if (tableOpt.isEmpty()) {
 			return false;
 		}
-		assertTableOwner(tableOpt.get(), operatorId);
+		require(Access.MANAGE, tableOpt.get(), operatorId);
 		log.info("Deleting TaskTable id={} by operator {}", tableId, operatorId);
 		return taskTableDao.deleteById(tableId);
 	}
 
-	// ==================== Role Management Operations ====================
+	// ==================== Access / Role Management Operations ====================
+
+	@Override
+	public Access accessLevel(UUID tableId, UUID userId) {
+		return accessOf(getTable(tableId), userId);
+	}
 
 	@Override
 	public void assignMemberRole(UUID tableId, UUID targetUserId, String role, UUID operatorId) {
-		assertTableOwner(tableId, operatorId);
 		validateNotBlank(role, "Role name cannot be empty");
+		Board table = getTable(tableId);
+		require(Access.MANAGE, table, operatorId);
 		getUserOrThrow(targetUserId);
 
-		Board table = getTable(tableId);
 		table.assignMemberRole(targetUserId, role);
 		taskTableDao.update(table);
-		log.info("Table owner {} assigned role '{}' to user {} on table {}", operatorId, role, targetUserId, tableId);
+		log.info("User {} assigned role '{}' to user {} on table {}", operatorId, role, targetUserId, tableId);
 	}
 
 	@Override
 	public void removeMemberRole(UUID tableId, UUID targetUserId, UUID operatorId) {
-		assertTableOwner(tableId, operatorId);
 		Board table = getTable(tableId);
+		require(Access.MANAGE, table, operatorId);
 		table.removeMemberRole(targetUserId);
 		taskTableDao.update(table);
-		log.info("Table owner {} removed role from user {} on table {}", operatorId, targetUserId, tableId);
+		log.info("User {} removed role from user {} on table {}", operatorId, targetUserId, tableId);
 	}
 
 	@Override
@@ -143,49 +133,18 @@ public class TaskServiceImpl implements TaskService{
 		return getTable(tableId).getMemberRoles();
 	}
 
-	@Override
-	public void addUserRole(UUID tableId, UUID targetUserId, String role, UUID operatorId) {
-		assertTableOwner(tableId, operatorId);
-		validateNotBlank(role, "Role name cannot be empty");
-		User target = getUserOrThrow(targetUserId);
-		target.addRole(role);
-		userDao.update(target);
-		log.info("Table owner {} added role '{}' to user {}", operatorId, role, targetUserId);
-	}
-
-	@Override
-	public void removeUserRole(UUID tableId, UUID targetUserId, String role, UUID operatorId) {
-		assertTableOwner(tableId, operatorId);
-		validateNotBlank(role, "Role name cannot be empty");
-		User target = getUserOrThrow(targetUserId);
-		target.removeRole(role);
-		userDao.update(target);
-		log.info("Table owner {} removed role '{}' from user {}", operatorId, role, targetUserId);
-	}
-
 	// ==================== Task List Operations ====================
-
-	@Override
-	public TaskList createList(String name, UUID tableId) {
-		return createList(name, tableId, null);
-	}
 
 	@Override
 	public TaskList createList(String name, UUID tableId, UUID operatorId) {
 		validateNotBlank(name, "List name cannot be empty");
-		Board table = tableId != null ? getTable(tableId) : null;
-		if (table != null) {
-			assertTableOwner(table, operatorId);
-		}
+		Board table = getTable(tableId);
+		require(Access.MANAGE, table, operatorId);
 		TaskList list = new TaskList(name.trim(), table);
+		list.setPosition(taskListDao.nextPositionInBoard(table.getId()));
 		taskListDao.save(list);
 		log.info("Created TaskList '{}' (id={}) in table {}", list.getName(), list.getId(), tableId);
 		return list;
-	}
-
-	@Override
-	public TaskList createList(String name) {
-		return createList(name, null, null);
 	}
 
 	@Override
@@ -204,26 +163,14 @@ public class TaskServiceImpl implements TaskService{
 	}
 
 	@Override
-	public TaskList renameList(UUID listId, String newName) {
-		return renameList(listId, newName, null);
-	}
-
-	@Override
 	public TaskList renameList(UUID listId, String newName, UUID operatorId) {
 		validateNotBlank(newName, "New list name cannot be empty");
 		TaskList list = getList(listId);
-		if (list.getBoard() != null) {
-			assertTableOwner(list.getBoard(), operatorId);
-		}
+		require(Access.MANAGE, list.getBoard(), operatorId);
 		list.setName(newName.trim());
 		taskListDao.update(list);
 		log.info("Renamed TaskList id={} to '{}' by operator {}", listId, list.getName(), operatorId);
 		return list;
-	}
-
-	@Override
-	public boolean deleteList(UUID listId) {
-		return deleteList(listId, null);
 	}
 
 	@Override
@@ -233,10 +180,7 @@ public class TaskServiceImpl implements TaskService{
 		if (listOpt.isEmpty()) {
 			return false;
 		}
-		TaskList list = listOpt.get();
-		if (list.getBoard() != null) {
-			assertTableOwner(list.getBoard(), operatorId);
-		}
+		require(Access.MANAGE, listOpt.get().getBoard(), operatorId);
 		log.info("Deleting TaskList id={} by operator {}", listId, operatorId);
 		return taskListDao.deleteById(listId);
 	}
@@ -244,42 +188,31 @@ public class TaskServiceImpl implements TaskService{
 	// ==================== Task Operations ====================
 
 	@Override
-	public Task createTask(String title) {
-		return createTask(title, null, null, null);
+	public Task createTask(String title, String description, UUID assigneeId, UUID listId, UUID operatorId) {
+		return createTask(title, description, null, null, null, assigneeId, listId, operatorId);
 	}
 
 	@Override
-	public Task createTask(String title, String description) {
-		return createTask(title, description, null, null);
-	}
-
-	@Override
-	public Task createTask(String title, String description, UUID listId) {
-		return createTask(title, description, null, listId);
-	}
-
-	@Override
-	public Task createTask(String title, String description, UUID userId, UUID listId) {
+	public Task createTask(String title, String description, Priority priority, String tag, LocalDate dueDate,
+						   UUID assigneeId, UUID listId, UUID operatorId) {
 		validateNotBlank(title, "Task title cannot be empty");
-		User user = userId != null ? getUserOrThrow(userId) : null;
-		TaskList list = listId != null ? getList(listId) : null;
-
-		Task task = new Task(title.trim(), description != null ? description.trim() : null, user, list);
-		if (list != null && list.getTasks() != null) {
-			task.setPosition(list.getTasks().size());
+		String cleanTag = cleanTag(tag);
+		TaskList list = getList(listId);
+		require(Access.EDIT, list.getBoard(), operatorId);
+		User assignee = assigneeId != null ? getUserOrThrow(assigneeId) : null;
+		if (assignee != null) {
+			requireCanBeAssigned(list.getBoard(), assignee.getId());
 		}
-		taskDao.save(task);
-		log.info("Created Task '{}' (id={})", task.getTitle(), task.getId());
-		return task;
-	}
 
-	@Override
-	public Task createTask(Task task) {
-		Objects.requireNonNull(task, "Task cannot be null");
-		validateNotBlank(task.getTitle(), "Task title cannot be empty");
-		task.setTitle(task.getTitle().trim());
-		taskDao.save(task);
-		log.info("Created Task entity '{}' (id={})", task.getTitle(), task.getId());
+		Task task = new Task(title.trim(), description != null ? description.trim() : null, assignee, list);
+		if (priority != null) {
+			task.setPriority(priority);
+		}
+		task.setTag(cleanTag);
+		task.setDueDate(dueDate);
+		// number and position are assigned inside the same transaction as the insert
+		taskDao.saveInList(task);
+		log.info("Created Task '{}' (id={}) by operator {}", task.getTitle(), task.getId(), operatorId);
 		return task;
 	}
 
@@ -299,6 +232,11 @@ public class TaskServiceImpl implements TaskService{
 	}
 
 	@Override
+	public List<Task> findTasksByTable(UUID tableId) {
+		return tableId != null ? taskDao.findByBoardId(tableId) : Collections.emptyList();
+	}
+
+	@Override
 	public List<Task> findTasksByUser(UUID userId) {
 		return userId != null ? taskDao.findByUserId(userId) : Collections.emptyList();
 	}
@@ -314,14 +252,9 @@ public class TaskServiceImpl implements TaskService{
 	}
 
 	@Override
-	public Task updateTask(UUID id, String newTitle, String newDescription) {
-		return updateTask(id, newTitle, newDescription, null);
-	}
-
-	@Override
 	public Task updateTask(UUID id, String newTitle, String newDescription, UUID operatorId) {
 		Task task = getTask(id);
-		assertTaskAccess(task, operatorId);
+		requireOnTask(Access.EDIT, task, operatorId);
 
 		if (newTitle != null) {
 			validateNotBlank(newTitle, "Task title cannot be empty");
@@ -336,27 +269,39 @@ public class TaskServiceImpl implements TaskService{
 	}
 
 	@Override
-	public Task updateTask(Task task) {
+	public Task updateTask(Task task, UUID operatorId) {
 		Objects.requireNonNull(task, "Task cannot be null");
 		if (task.getId() == null) {
 			throw new IllegalArgumentException("Task ID cannot be null when updating");
 		}
 		validateNotBlank(task.getTitle(), "Task title cannot be empty");
-		taskDao.update(task);
-		log.info("Updated Task entity id={}", task.getId());
-		return task;
-	}
 
-	@Override
-	public Task assignTask(UUID taskId, UUID userId) {
-		return assignTask(taskId, userId, null);
+		// access is checked against the card as it is stored, and only the editable fields are copied:
+		// the caller cannot move the card to another column or board through this method
+		Task stored = getTask(task.getId());
+		requireOnTask(Access.EDIT, stored, operatorId);
+
+		stored.setTitle(task.getTitle().trim());
+		stored.setDescription(task.getDescription() != null ? task.getDescription().trim() : null);
+		if (task.getPriority() != null) {
+			stored.setPriority(task.getPriority());
+		}
+		stored.setTag(cleanTag(task.getTag()));
+		stored.setDueDate(task.getDueDate());
+		taskDao.update(stored);
+		log.info("Updated Task entity id={} by operator {}", stored.getId(), operatorId);
+		return stored;
 	}
 
 	@Override
 	public Task assignTask(UUID taskId, UUID userId, UUID operatorId) {
 		Task task = getTask(taskId);
-		assertTaskAccess(task, operatorId);
+		requireOnTask(Access.EDIT, task, operatorId);
 		User user = getUserOrThrow(userId);
+		Board board = boardOf(task);
+		if (board != null) {
+			requireCanBeAssigned(board, user.getId());
+		}
 		task.setUserOwner(user);
 		taskDao.update(task);
 		log.info("Assigned Task id={} to User id={} by operator {}", taskId, userId, operatorId);
@@ -364,14 +309,9 @@ public class TaskServiceImpl implements TaskService{
 	}
 
 	@Override
-	public Task unassignTask(UUID taskId) {
-		return unassignTask(taskId, null);
-	}
-
-	@Override
 	public Task unassignTask(UUID taskId, UUID operatorId) {
 		Task task = getTask(taskId);
-		assertTaskAccess(task, operatorId);
+		requireOnTask(Access.EDIT, task, operatorId);
 		task.setUserOwner(null);
 		taskDao.update(task);
 		log.info("Unassigned Task id={} by operator {}", taskId, operatorId);
@@ -379,40 +319,27 @@ public class TaskServiceImpl implements TaskService{
 	}
 
 	@Override
-	public Task moveTask(UUID taskId, UUID targetListId) {
-		return moveTask(taskId, targetListId, -1, null);
-	}
-
-	@Override
-	public Task moveTask(UUID taskId, UUID targetListId, int position) {
-		return moveTask(taskId, targetListId, position, null);
-	}
-
-	@Override
 	public Task moveTask(UUID taskId, UUID targetListId, int position, UUID operatorId) {
 		Task task = getTask(taskId);
-		assertTaskAccess(task, operatorId);
-		TaskList targetList = targetListId != null ? getList(targetListId) : null;
-		if (targetList != null && targetList.getBoard() != null) {
-			assertTableOwner(targetList.getBoard(), operatorId);
+		requireOnTask(Access.EDIT, task, operatorId);
+		TaskList targetList = getList(targetListId);
+		require(Access.EDIT, targetList.getBoard(), operatorId);
+
+		// card numbers (TASK-1, TASK-2...) are counted per board, so a card stays on its board
+		Board currentBoard = boardOf(task);
+		if (currentBoard != null && !Objects.equals(currentBoard.getId(), targetList.getBoard().getId())) {
+			throw new IllegalArgumentException("A card cannot be moved to a column of another board");
 		}
 
 		task.setTaskListParent(targetList);
 		if (position >= 0) {
 			task.setPosition(position);
-		} else if (targetList != null && targetList.getTasks() != null) {
-			task.setPosition(targetList.getTasks().size());
 		} else {
-			task.setPosition(0);
+			task.setPosition(taskDao.nextPositionInList(targetList.getId()));
 		}
 		taskDao.update(task);
 		log.info("Moved Task id={} to List id={} at position {} by operator {}", taskId, targetListId, task.getPosition(), operatorId);
 		return task;
-	}
-
-	@Override
-	public Task reorderTask(UUID taskId, int newPosition) {
-		return reorderTask(taskId, newPosition, null);
 	}
 
 	@Override
@@ -421,16 +348,11 @@ public class TaskServiceImpl implements TaskService{
 			throw new IllegalArgumentException("Position must be non-negative: " + newPosition);
 		}
 		Task task = getTask(taskId);
-		assertTaskAccess(task, operatorId);
+		requireOnTask(Access.EDIT, task, operatorId);
 		task.setPosition(newPosition);
 		taskDao.update(task);
 		log.info("Reordered Task id={} to position {} by operator {}", taskId, newPosition, operatorId);
 		return task;
-	}
-
-	@Override
-	public boolean deleteTask(UUID taskId) {
-		return deleteTask(taskId, null);
 	}
 
 	@Override
@@ -440,7 +362,7 @@ public class TaskServiceImpl implements TaskService{
 		if (taskOpt.isEmpty()) {
 			return false;
 		}
-		assertTaskAccess(taskOpt.get(), operatorId);
+		requireOnTask(Access.EDIT, taskOpt.get(), operatorId);
 		log.info("Deleting Task id={} by operator {}", taskId, operatorId);
 		return taskDao.deleteById(taskId);
 	}
@@ -453,28 +375,60 @@ public class TaskServiceImpl implements TaskService{
 		return getTable(tableId).isOwner(userId);
 	}
 
-	private void assertTableOwner(Board table, UUID operatorId) {
-		if (operatorId != null) {
-			if (table == null || !table.isOwner(operatorId)) {
-				throw new SecurityException("User " + operatorId + " is not the owner of table " + (table != null ? table.getId() : "null"));
-			}
+	private Access accessOf(Board board, UUID userId) {
+		if (board == null || userId == null) {
+			return Access.NONE;
+		}
+		if (board.isOwner(userId)) {
+			return Access.MANAGE;
+		}
+		String boardRole = board.getMemberRole(userId);
+		if (boardRole != null) {
+			return Access.ofBoardRole(boardRole);
+		}
+		if (board.getTeam() != null) {
+			UserTeam membership = userTeamDao.findByUserAndTeam(userId, board.getTeam().getId());
+			return membership != null ? Access.of(membership.getRole()) : Access.NONE;
+		}
+		return Access.NONE;
+	}
+
+		private void require(Access needed, Board board, UUID operatorId) {
+		if (operatorId == null) {
+			throw new SecurityException("Authentication required");
+		}
+		if (!accessOf(board, operatorId).atLeast(needed)) {
+			throw new SecurityException("User " + operatorId + " has no " + needed + " access to table "
+					+ (board != null ? board.getId() : "null"));
 		}
 	}
 
-	private void assertTableOwner(UUID tableId, UUID operatorId) {
-		if (operatorId != null) {
-			assertTableOwner(getTable(tableId), operatorId);
+	private void requireOnTask(Access needed, Task task, UUID operatorId) {
+		Board board = boardOf(task);
+		if (board != null) {
+			require(needed, board, operatorId);
+			return;
+		}
+		// Normally a card sits in a column and the column belongs to a board: the board decides who may touch it.
+		// Old rows can hold a card that sits in no column at all (taskListParent == null), so there is no board to ask.
+		// For such a card the only person allowed to touch it is the one it is assigned to.
+		if (operatorId == null) {
+			throw new SecurityException("Authentication required");
+		}
+		boolean isAssignee = task.getUserOwner() != null && operatorId.equals(task.getUserOwner().getId());
+		if (!isAssignee) {
+			throw new SecurityException("User " + operatorId + " is not authorized to modify task " + task.getId());
 		}
 	}
 
-	private void assertTaskAccess(Task task, UUID operatorId) {
-		if (operatorId != null) {
-			boolean isOwner = task.getTaskListParent() != null && task.getTaskListParent().getBoard() != null && task.getTaskListParent().getBoard().isOwner(operatorId);
-			boolean isAssignee = task.getUserOwner() != null && operatorId.equals(task.getUserOwner().getId());
-			if (!isOwner && !isAssignee) {
-				throw new SecurityException("User " + operatorId + " is not authorized to modify task " + task.getId());
-			}
+		private void requireCanBeAssigned(Board board, UUID assigneeId) {
+		if (!accessOf(board, assigneeId).atLeast(Access.EDIT)) {
+			throw new IllegalArgumentException("User " + assigneeId + " cannot edit this board, so cards cannot be assigned to him");
 		}
+	}
+
+	private Board boardOf(Task task) {
+		return task.getTaskListParent() != null ? task.getTaskListParent().getBoard() : null;
 	}
 
 	private User getUserOrThrow(UUID userId) {
@@ -486,6 +440,18 @@ public class TaskServiceImpl implements TaskService{
 			throw new NoSuchElementException("User not found with id: " + userId);
 		}
 		return user;
+	}
+
+	/** Blank tag = no tag; a tag longer than the column is refused here, not by the database. */
+	private String cleanTag(String tag) {
+		if (tag == null || tag.isBlank()) {
+			return null;
+		}
+		String trimmed = tag.trim();
+		if (trimmed.length() > MAX_TAG_LENGTH) {
+			throw new IllegalArgumentException("Tag must be at most " + MAX_TAG_LENGTH + " characters long");
+		}
+		return trimmed;
 	}
 
 	private void validateNotBlank(String value, String message) {

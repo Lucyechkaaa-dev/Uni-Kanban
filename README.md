@@ -91,6 +91,7 @@ Uni-Kanban/
 │   │       ├── hibernate.cfg.xml       # Hibernate settings & entity mappings
 │   │       └── log4j2.xml              # Logging configuration
 │   └── test/java/backend/              # Test suite (JUnit 5 + Mockito)
+├── db/migrations/                      # One-off SQL migrations for existing databases
 ├── .env.example                        # Template for environment variables
 ├── pom.xml                             # Maven build and dependencies
 └── README.md
@@ -115,14 +116,25 @@ DB_PASS=your_password
 DB_SCHEMA=public
 ```
 
-### 2. Build & Test
+### 2. Database Migration (existing databases only)
+The board tables were renamed (`task_tables` → `boards`, `task_table_member_roles` → `board_member_roles`,
+`task_table_id` → `board_id`). Run the migration once before starting this build:
+
+```bash
+psql -h localhost -U postgres -d kanban -f db/migrations/001_rename_task_tables_to_boards.sql
+```
+
+Fresh databases need nothing — the schema is created on first start. Do not rely on
+`hibernate.hbm2ddl.auto=update` to rename tables: it creates empty duplicates instead.
+
+### 3. Build & Test
 To build the project and execute the test suite:
 
 ```bash
 mvn clean test
 ```
 
-### 3. Package & Run
+### 4. Package & Run
 Package the project into an executable JAR:
 
 ```bash
