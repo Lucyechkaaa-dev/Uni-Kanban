@@ -21,7 +21,7 @@ public class TaskTableDao {
 		try (Session session = HibernateFactory.getSessionFactory().openSession()) {
 			Board table = session.createQuery(
 							"select distinct b from Board b left join fetch b.user left join fetch b.team "
-									+ "left join fetch b.memberRoles where b.id = :id", Board.class)
+									+ "where b.id = :id", Board.class)
 					.setParameter("id", id)
 					.uniqueResult();
 			if (table != null) {
@@ -100,7 +100,7 @@ public class TaskTableDao {
 
 	public List<Board> findAll() {
 		try (Session session = HibernateFactory.getSessionFactory().openSession()) {
-			return session.createQuery("select distinct b from Board b left join fetch b.memberRoles", Board.class).list();
+			return session.createQuery("select distinct b from Board b", Board.class).list();
 		}
 	}
 
@@ -108,7 +108,7 @@ public class TaskTableDao {
 		if (userId == null) return Collections.emptyList();
 		try (Session session = HibernateFactory.getSessionFactory().openSession()) {
 			return session.createQuery(
-							"select distinct b from Board b left join fetch b.memberRoles where b.user.id = :userId", Board.class)
+							"select distinct b from Board b where b.user.id = :userId", Board.class)
 					.setParameter("userId", userId)
 					.list();
 		}

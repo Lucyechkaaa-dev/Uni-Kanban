@@ -12,13 +12,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.io.Externalizable;
-import java.util.Collections;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Log4j2
 @Service
@@ -61,14 +55,7 @@ public class UserTeamServiceImpl implements UserTeamService{
 
         TeamRole assignedRole = (role != null) ? role : TeamRole.MEMBER;
         UserTeam membership = new UserTeam(user, team, assignedRole);
-        userTeamDao.save(membership);
-
-        if (team.getMembers() != null && !team.getMembers().contains(membership)) {
-            team.getMembers().add(membership);
-        }
-        if (user.getUserTeams() != null && !user.getUserTeams().contains(membership)) {
-            user.getUserTeams().add(membership);
-        }
+        userTeamDao.save(membership); // the row is the membership; collections reload from it
 
         log.info("User {} added to team {} successfully with role {}", userId, teamId, assignedRole);
         return membership;
@@ -95,13 +82,6 @@ public class UserTeamServiceImpl implements UserTeamService{
         }
 
         userTeamDao.delete(membership);
-
-        if (membership.getTeam() != null && membership.getTeam().getMembers() != null) {
-            membership.getTeam().getMembers().remove(membership);
-        }
-        if (membership.getUser() != null && membership.getUser().getUserTeams() != null) {
-            membership.getUser().getUserTeams().remove(membership);
-        }
 
         log.info("User {} removed from team {} successfully", userId, teamId);
     }

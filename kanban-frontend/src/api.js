@@ -65,6 +65,8 @@ function toUiTask(t) {
         user: initials(t.assigneeName),
         date: t.dueDate || '',
         commentsCount: 0,
+        columnId: t.columnId,
+        position: t.position,
     };
 }
 
@@ -74,6 +76,7 @@ function toUiBoard(b) {
         name: b.name,
         description: b.description || '',
         access: b.access,
+        owner: b.owner,
         columns: b.columns.map((c) => ({
             id: c.id,
             title: c.name,
@@ -102,16 +105,37 @@ export const api = {
     //who am I: resolves with the user if the browser has a valid session, rejects with 401 if not
     me: () => request('GET', '/auth/me'),
 
-    //the first board of the user made at registration
-    async firstBoard() {
-        const boards = await request('GET', '/boards');
-        if (boards.length === 0) throw new ApiError(404, 'You have no boards yet');
-        return toUiBoard(await request('GET', `/boards/${boards[0].id}`));
+    //the boards the user owns, then the boards shared with the user (role = VIEWER, MEMBER or ADMIN)
+    async boardList() {
+        const [mine, shared] = await Promise.all([request('GET', '/boards'), request('GET', '/boards/shared')]);
+        return [
+            ...mine.map((b) => ({ id: b.id, name: b.name, owned: true, role: 'OWNER', ownerName: null })),
+            ...shared.map((b) => ({ id: b.id, name: b.name, owned: false, role: b.role, ownerName: b.ownerUsername })),
+        ];
     },
 
     async board(id) {
         return toUiBoard(await request('GET', `/boards/${id}`));
     },
+
+    renameBoard: (id, name) => request('PUT', `/boards/${id}`, { name }),
+
+    //one card as the server stores it now (for live updates)
+    card: async (id) => toUiTask(await request('GET', `/tasks/${id}`)),
+
+    //live updates: a stream that says "change" whenever the board changed (see BoardEventsController)
+    eventsUrl: (id) => `/api/boards/${id}/events`,
+
+    //sharing: who has access to a board, and who can be added
+    members: (boardId) => request('GET', `/boards/${boardId}/members`),
+
+    addMember: (boardId, userId, role) => request('POST', `/boards/${boardId}/members`, { userId, role }),
+
+    changeMemberRole: (boardId, userId, role) => request('PUT', `/boards/${boardId}/members/${userId}`, { role }),
+
+    removeMember: (boardId, userId) => request('DELETE', `/boards/${boardId}/members/${userId}`),
+
+    searchUsers: (query) => request('GET', `/users/search?q=${encodeURIComponent(query)}`),
 
     async createTask(columnId, form, assigneeId) {
         return toUiTask(await request('POST', `/columns/${columnId}/tasks`, { ...toApiTask(form), assigneeId }));

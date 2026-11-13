@@ -12,12 +12,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.NoSuchElementException;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Log4j2
 @Service
@@ -59,11 +54,7 @@ public class TeamServiceImpl implements TeamService{
 
         if (owner != null) {
             UserTeam ownerMembership = new UserTeam(owner, team, TeamRole.OWNER);
-            userTeamDao.save(ownerMembership);
-            team.getMembers().add(ownerMembership);
-            if (owner.getUserTeams() != null && !owner.getUserTeams().contains(ownerMembership)) {
-                owner.getUserTeams().add(ownerMembership);
-            }
+            userTeamDao.save(ownerMembership); // the row is the membership; collections reload from it
             log.info("Assigned user {} as OWNER of team {}", owner.getId(), team.getId());
         }
 
@@ -91,10 +82,6 @@ public class TeamServiceImpl implements TeamService{
         if (owner != null) {
             UserTeam ownerMembership = new UserTeam(owner, team, TeamRole.OWNER);
             userTeamDao.save(ownerMembership);
-            team.getMembers().add(ownerMembership);
-            if (owner.getUserTeams() != null && !owner.getUserTeams().contains(ownerMembership)) {
-                owner.getUserTeams().add(ownerMembership);
-            }
         }
 
         return team;

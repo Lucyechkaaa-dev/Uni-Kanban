@@ -23,7 +23,7 @@ public class TaskDao {
 			Task task = session.createQuery(
 							"select t from Task t left join fetch t.userOwner left join fetch t.taskListParent l "
 									+ "left join fetch l.board b left join fetch b.user left join fetch b.team "
-									+ "left join fetch b.memberRoles where t.id = :id",
+									+ "where t.id = :id",
 							Task.class)
 					.setParameter("id", id)
 					.uniqueResult();

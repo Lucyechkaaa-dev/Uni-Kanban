@@ -1,8 +1,8 @@
 package backend.export.dto;
 
+import backend.models.task.Board;
 import backend.models.task.Task;
 import backend.models.task.TaskList;
-import backend.models.task.Board;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;

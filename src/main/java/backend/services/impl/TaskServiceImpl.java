@@ -1,17 +1,15 @@
 package backend.services.impl;
 
-import backend.dao.TaskDao;
-import backend.dao.TaskListDao;
-import backend.dao.TaskTableDao;
-import backend.dao.UserDao;
-import backend.dao.UserTeamDao;
-import backend.models.task.Task;
-import backend.models.task.TaskList;
+import backend.dao.*;
 import backend.models.task.Board;
 import backend.models.task.Priority;
+import backend.models.task.Task;
+import backend.models.task.TaskList;
 import backend.models.team.UserTeam;
 import backend.models.user.User;
 import backend.services.Access;
+import backend.services.BoardChange;
+import backend.services.BoardEvents;
 import backend.services.TaskService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.log4j.Log4j2;
@@ -19,13 +17,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 
 @Log4j2
 @Service
@@ -37,6 +29,7 @@ public class TaskServiceImpl implements TaskService{
 	private final TaskTableDao taskTableDao;
 	private final UserDao userDao;
 	private final UserTeamDao userTeamDao;
+	private final BoardEvents events;
 
 	private static final int MAX_TAG_LENGTH = 32; // the tag column is varchar(32)
 
@@ -79,6 +72,7 @@ public class TaskServiceImpl implements TaskService{
 		require(Access.MANAGE, table, operatorId);
 		table.setName(newName.trim());
 		taskTableDao.update(table);
+		publish(table);
 		log.info("Renamed TaskTable id={} to '{}' by operator {}", tableId, table.getName(), operatorId);
 		return table;
 	}
@@ -90,9 +84,15 @@ public class TaskServiceImpl implements TaskService{
 		if (tableOpt.isEmpty()) {
 			return false;
 		}
-		require(Access.MANAGE, tableOpt.get(), operatorId);
+		// deleting a board is the owner's decision only; members with MANAGE may run the board but not delete it
+		Board table = tableOpt.get();
+		if (operatorId == null || !table.isOwner(operatorId)) {
+			throw new SecurityException("Only the owner can delete board " + tableId);
+		}
 		log.info("Deleting TaskTable id={} by operator {}", tableId, operatorId);
-		return taskTableDao.deleteById(tableId);
+		boolean deleted = taskTableDao.deleteById(tableId);
+		events.publish(tableId, BoardChange.board(null));
+		return deleted;
 	}
 
 	// ==================== Access / Role Management Operations ====================
@@ -102,36 +102,6 @@ public class TaskServiceImpl implements TaskService{
 		return accessOf(getTable(tableId), userId);
 	}
 
-	@Override
-	public void assignMemberRole(UUID tableId, UUID targetUserId, String role, UUID operatorId) {
-		validateNotBlank(role, "Role name cannot be empty");
-		Board table = getTable(tableId);
-		require(Access.MANAGE, table, operatorId);
-		getUserOrThrow(targetUserId);
-
-		table.assignMemberRole(targetUserId, role);
-		taskTableDao.update(table);
-		log.info("User {} assigned role '{}' to user {} on table {}", operatorId, role, targetUserId, tableId);
-	}
-
-	@Override
-	public void removeMemberRole(UUID tableId, UUID targetUserId, UUID operatorId) {
-		Board table = getTable(tableId);
-		require(Access.MANAGE, table, operatorId);
-		table.removeMemberRole(targetUserId);
-		taskTableDao.update(table);
-		log.info("User {} removed role from user {} on table {}", operatorId, targetUserId, tableId);
-	}
-
-	@Override
-	public String getMemberRole(UUID tableId, UUID userId) {
-		return getTable(tableId).getMemberRole(userId);
-	}
-
-	@Override
-	public Map<UUID, String> getMemberRoles(UUID tableId) {
-		return getTable(tableId).getMemberRoles();
-	}
 
 	// ==================== Task List Operations ====================
 
@@ -143,6 +113,7 @@ public class TaskServiceImpl implements TaskService{
 		TaskList list = new TaskList(name.trim(), table);
 		list.setPosition(taskListDao.nextPositionInBoard(table.getId()));
 		taskListDao.save(list);
+		publish(table);
 		log.info("Created TaskList '{}' (id={}) in table {}", list.getName(), list.getId(), tableId);
 		return list;
 	}
@@ -169,6 +140,7 @@ public class TaskServiceImpl implements TaskService{
 		require(Access.MANAGE, list.getBoard(), operatorId);
 		list.setName(newName.trim());
 		taskListDao.update(list);
+		publish(list.getBoard());
 		log.info("Renamed TaskList id={} to '{}' by operator {}", listId, list.getName(), operatorId);
 		return list;
 	}
@@ -182,7 +154,10 @@ public class TaskServiceImpl implements TaskService{
 		}
 		require(Access.MANAGE, listOpt.get().getBoard(), operatorId);
 		log.info("Deleting TaskList id={} by operator {}", listId, operatorId);
-		return taskListDao.deleteById(listId);
+		Board board = listOpt.get().getBoard();
+		boolean deleted = taskListDao.deleteById(listId);
+		publish(board);
+		return deleted;
 	}
 
 	// ==================== Task Operations ====================
@@ -212,6 +187,7 @@ public class TaskServiceImpl implements TaskService{
 		task.setDueDate(dueDate);
 		// number and position are assigned inside the same transaction as the insert
 		taskDao.saveInList(task);
+		publishTask(list.getBoard(), task.getId(), operatorId);
 		log.info("Created Task '{}' (id={}) by operator {}", task.getTitle(), task.getId(), operatorId);
 		return task;
 	}
@@ -264,6 +240,7 @@ public class TaskServiceImpl implements TaskService{
 			task.setDescription(newDescription.trim());
 		}
 		taskDao.update(task);
+		publishTask(boardOf(task), id, operatorId);
 		log.info("Updated Task id={}: title='{}' by operator {}", id, task.getTitle(), operatorId);
 		return task;
 	}
@@ -289,6 +266,7 @@ public class TaskServiceImpl implements TaskService{
 		stored.setTag(cleanTag(task.getTag()));
 		stored.setDueDate(task.getDueDate());
 		taskDao.update(stored);
+		publishTask(boardOf(stored), stored.getId(), operatorId);
 		log.info("Updated Task entity id={} by operator {}", stored.getId(), operatorId);
 		return stored;
 	}
@@ -304,6 +282,7 @@ public class TaskServiceImpl implements TaskService{
 		}
 		task.setUserOwner(user);
 		taskDao.update(task);
+		publishTask(boardOf(task), taskId, operatorId);
 		log.info("Assigned Task id={} to User id={} by operator {}", taskId, userId, operatorId);
 		return task;
 	}
@@ -314,6 +293,7 @@ public class TaskServiceImpl implements TaskService{
 		requireOnTask(Access.EDIT, task, operatorId);
 		task.setUserOwner(null);
 		taskDao.update(task);
+		publishTask(boardOf(task), taskId, operatorId);
 		log.info("Unassigned Task id={} by operator {}", taskId, operatorId);
 		return task;
 	}
@@ -338,6 +318,7 @@ public class TaskServiceImpl implements TaskService{
 			task.setPosition(taskDao.nextPositionInList(targetList.getId()));
 		}
 		taskDao.update(task);
+		publishTask(targetList.getBoard(), taskId, operatorId);
 		log.info("Moved Task id={} to List id={} at position {} by operator {}", taskId, targetListId, task.getPosition(), operatorId);
 		return task;
 	}
@@ -351,6 +332,7 @@ public class TaskServiceImpl implements TaskService{
 		requireOnTask(Access.EDIT, task, operatorId);
 		task.setPosition(newPosition);
 		taskDao.update(task);
+		publishTask(boardOf(task), taskId, operatorId);
 		log.info("Reordered Task id={} to position {} by operator {}", taskId, newPosition, operatorId);
 		return task;
 	}
@@ -364,7 +346,10 @@ public class TaskServiceImpl implements TaskService{
 		}
 		requireOnTask(Access.EDIT, taskOpt.get(), operatorId);
 		log.info("Deleting Task id={} by operator {}", taskId, operatorId);
-		return taskDao.deleteById(taskId);
+		Board board = boardOf(taskOpt.get());
+		boolean deleted = taskDao.deleteById(taskId);
+		publishTask(board, taskId, operatorId);
+		return deleted;
 	}
 
 	// ==================== Internal Helpers / Utilities ====================
@@ -381,10 +366,6 @@ public class TaskServiceImpl implements TaskService{
 		}
 		if (board.isOwner(userId)) {
 			return Access.MANAGE;
-		}
-		String boardRole = board.getMemberRole(userId);
-		if (boardRole != null) {
-			return Access.ofBoardRole(boardRole);
 		}
 		if (board.getTeam() != null) {
 			UserTeam membership = userTeamDao.findByUserAndTeam(userId, board.getTeam().getId());
@@ -425,6 +406,26 @@ public class TaskServiceImpl implements TaskService{
 		if (!accessOf(board, assigneeId).atLeast(Access.EDIT)) {
 			throw new IllegalArgumentException("User " + assigneeId + " cannot edit this board, so cards cannot be assigned to him");
 		}
+	}
+
+	/** Tells everyone watching the board that its structure changed (columns, name). Called after the change is stored. */
+	private void publish(Board board) {
+		if (board != null) {
+			events.publish(board.getId(), BoardChange.board(null));
+		}
+	}
+
+	/** Tells everyone watching the board that one card changed, and who changed it. */
+	private void publishTask(Board board, UUID taskId, UUID operatorId) {
+		if (board != null) {
+			events.publish(board.getId(), BoardChange.task(taskId, usernameOf(operatorId)));
+		}
+	}
+
+	private String usernameOf(UUID userId) {
+		if (userId == null) return null;
+		User user = userDao.findById(userId);
+		return user != null ? user.getUsername() : null;
 	}
 
 	private Board boardOf(Task task) {

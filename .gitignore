@@ -5,8 +5,7 @@
 .env
 .backup/
 
-# Local secrets and certificates - never commit
-deploy/secrets.cmd
+# Local secrets and certificates - never commit (the settings file is .env; .env.example is the template)
 certs/
 *.p12
 *.pfx

@@ -1,12 +1,10 @@
 package backend.dao;
 
-import backend.models.task.Board;
 import backend.models.user.User;
 import backend.utils.HibernateFactory;
 import lombok.extern.log4j.Log4j2;
 import org.hibernate.Session;
 import org.hibernate.Transaction;
-
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -124,7 +122,6 @@ public class UserDao{
 			User user = session.find(User.class, id);
 			if(user != null){
 				unassignTasks(session, id);
-				unassignBoardRoles(session, id);
 				session.remove(user);
 				tx.commit();
 				log.info("User deleted with id: {}", id);
@@ -147,12 +144,21 @@ public class UserDao{
 				.executeUpdate();
 	}
 
-	private static void unassignBoardRoles(Session session, UUID userId){
-		List<Board> boards = session.createQuery(
-						"select distinct b from Board b join b.memberRoles r where key(r) = :id", Board.class)
-				.setParameter("id", userId)
-				.list();
-		boards.forEach(board -> board.removeMemberRole(userId));
+	/**
+	 * Users whose username contains the text (case-insensitive), at most {@code limit} rows,
+	 * never the user with {@code excludeId}. Callers expose only id and username.
+	 */
+	public List<User> searchUsers(String query, UUID excludeId, int limit) {
+		String escaped = query.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_");
+		try (Session session = HibernateFactory.getSessionFactory().openSession()) {
+			return session.createQuery(
+							"from User u where lower(u.username) like lower(:query) escape '\\' "
+									+ "and u.id <> :exclude order by u.username", User.class)
+					.setParameter("query", "%" + escaped + "%")
+					.setParameter("exclude", excludeId)
+					.setMaxResults(limit)
+					.list();
+		}
 	}
 
 	public List<User> searchByUsername(String query) {

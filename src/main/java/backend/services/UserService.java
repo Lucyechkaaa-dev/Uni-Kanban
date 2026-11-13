@@ -18,6 +18,8 @@ public interface UserService {
     Optional<User> findByUsername(String username);
     Optional<User> findByEmail(String email);
     List<User> searchByUsername(String query);
+    /** For the sharing dialog: at least 2 characters, at most 10 results, never the asking user. */
+    List<User> searchUsers(String query, UUID excludeId);
     List<User> findAll();
     boolean deleteById(UUID id);
     void delete(User user);

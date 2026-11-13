@@ -1,16 +1,12 @@
 package backend.models.user;
 
-import backend.models.task.Task;
 import backend.models.task.Board;
+import backend.models.task.Task;
 import backend.models.team.Team;
 import backend.models.team.TeamRole;
 import backend.models.team.UserTeam;
 import jakarta.persistence.*;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 import lombok.extern.log4j.Log4j2;
 
 import java.util.*;

@@ -1,0 +1,60 @@
+/* Live connection status and activity notices on the board screen. Uses the theme variables. */
+
+.live-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.75rem;
+    color: var(--text-secondary);
+    white-space: nowrap;
+}
+
+.live-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #94a3b8;
+}
+
+.live-live .live-dot {
+    background: #22c55e;
+}
+
+.live-reconnecting .live-dot {
+    background: #f59e0b;
+    animation: live-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes live-pulse {
+    50% {
+        opacity: 0.3;
+    }
+}
+
+.notice-stack {
+    position: fixed;
+    right: 16px;
+    bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    z-index: 900;
+    pointer-events: none;
+}
+
+.notice {
+    background: var(--bg-card);
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 8px 12px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+    font-size: 0.85rem;
+    max-width: 320px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .live-reconnecting .live-dot {
+        animation: none;
+    }
+}

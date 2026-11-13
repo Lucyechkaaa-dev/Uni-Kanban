@@ -1,8 +1,7 @@
-# Caddy: public HTTPS front end for the Kanban dev server.
-# Caddy requests a Let's Encrypt certificate for the hostname automatically.
-# Requirements: router forwards external 80 -> this PC port 80 (ACME HTTP-01 check)
-# and external 2345 -> this PC port 2345.
+# Public HTTPS entry. Caddy gets a Let's Encrypt certificate for PUBLIC_HOST automatically.
+# Values come from the project .env: PUBLIC_HOST, PUBLIC_PORT, FRONTEND_PORT.
+# Requires router forwards: external 80 -> this PC 80, and external PUBLIC_PORT -> this PC PUBLIC_PORT.
 
-lucyechkaaa.myddns.me:2345 {
-	reverse_proxy 127.0.0.1:5173
+{$PUBLIC_HOST}:{$PUBLIC_PORT} {
+	reverse_proxy 127.0.0.1:{$FRONTEND_PORT}
 }

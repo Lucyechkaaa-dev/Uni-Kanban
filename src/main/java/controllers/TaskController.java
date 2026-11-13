@@ -3,20 +3,13 @@ package controllers;
 import backend.models.task.Priority;
 import backend.models.task.Task;
 import backend.security.AuthInterceptor;
+import backend.services.Access;
 import backend.services.TaskService;
 import controllers.ApiDtos.MoveRequest;
 import controllers.ApiDtos.TaskDto;
 import controllers.ApiDtos.TaskRequest;
 import org.springframework.http.HttpStatus;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestAttribute;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.ResponseStatus;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.Locale;
 import java.util.NoSuchElementException;
@@ -31,6 +24,21 @@ public class TaskController {
 
     public TaskController(TaskService tasks) {
         this.tasks = tasks;
+    }
+
+    /** One card as it is stored now, for a live update. A card the user cannot see, or that is gone, is 404. */
+    @GetMapping("/tasks/{id}")
+    public TaskDto get(@PathVariable("id") UUID id,
+                       @RequestAttribute(AuthInterceptor.USER_ID) UUID userId) {
+        Task task = tasks.findTask(id).orElseThrow(() -> new NoSuchElementException("Task not found with id: " + id));
+        if (task.getTaskListParent() == null || task.getTaskListParent().getBoard() == null) {
+            throw new NoSuchElementException("Task not found with id: " + id);
+        }
+        UUID boardId = task.getTaskListParent().getBoard().getId();
+        if (tasks.accessLevel(boardId, userId) == Access.NONE) {
+            throw new NoSuchElementException("Task not found with id: " + id);
+        }
+        return TaskDto.of(task);
     }
 
     @PostMapping("/columns/{columnId}/tasks")

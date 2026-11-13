@@ -11,13 +11,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
-import java.util.Collections;
-import java.util.List;
-import java.util.Locale;
-import java.util.NoSuchElementException;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.UUID;
+import java.util.*;
 import java.util.regex.Pattern;
 
 @Log4j2
@@ -28,6 +22,8 @@ public class UserServiceImpl implements UserService{
     static final String DEFAULT_BOARD_NAME = "My board";
     static final String INVALID_LOGIN = "Invalid email or password";
     private static final int MIN_PASSWORD_LENGTH = 8;
+    static final int MIN_SEARCH_LENGTH = 2;
+    static final int MAX_SEARCH_RESULTS = 10;
     private static final int MAX_EMAIL_LENGTH = 254;
     private static final Pattern EMAIL = Pattern.compile("^[^@\\s]+@[^@\\s]+\\.[^@\\s]+$");
 
@@ -159,6 +155,15 @@ public class UserServiceImpl implements UserService{
             return Collections.emptyList();
         }
         return userDao.searchByUsername(query.trim());
+    }
+
+    @Override
+    public List<User> searchUsers(String query, UUID excludeId) {
+        String text = query != null ? query.trim() : "";
+        if (text.length() < MIN_SEARCH_LENGTH) {
+            throw new IllegalArgumentException("Type at least " + MIN_SEARCH_LENGTH + " characters to search");
+        }
+        return userDao.searchUsers(text, excludeId, MAX_SEARCH_RESULTS);
     }
 
     @Override

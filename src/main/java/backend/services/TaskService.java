@@ -1,13 +1,12 @@
 package backend.services;
 
-import backend.models.task.Task;
-import backend.models.task.TaskList;
 import backend.models.task.Board;
 import backend.models.task.Priority;
+import backend.models.task.Task;
+import backend.models.task.TaskList;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -29,17 +28,10 @@ public interface TaskService {
 
     boolean deleteTable(UUID tableId, UUID operatorId);
 
-    // ==================== Access / Role Management Operations ====================
+    // ==================== Access ====================
 
+    /** What the user may do on the board: NONE, VIEW, EDIT or MANAGE. Sharing is handled by BoardSharingService. */
     Access accessLevel(UUID tableId, UUID userId);
-
-    void assignMemberRole(UUID tableId, UUID targetUserId, String role, UUID operatorId);
-
-    void removeMemberRole(UUID tableId, UUID targetUserId, UUID operatorId);
-
-    String getMemberRole(UUID tableId, UUID userId);
-
-    Map<UUID, String> getMemberRoles(UUID tableId);
 
     // ==================== Task List Operations ====================
 

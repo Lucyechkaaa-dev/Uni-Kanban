@@ -73,7 +73,7 @@ class MappingSmokeTest {
     /** Services are container singletons; tests wire the same constructor Spring uses. */
     private static TaskService newTaskService() {
         return new TaskServiceImpl(new TaskDao(), new TaskListDao(), new TaskTableDao(),
-                new UserDao(), new UserTeamDao());
+                new UserDao(), new UserTeamDao(), new backend.services.BoardEvents());
     }
 
     @Test
@@ -217,14 +217,23 @@ class MappingSmokeTest {
         Board board = newBoard(owner);
         List<TaskList> lists = new TaskListDao().findByTableId(board.getId());
         TaskService service = newTaskService();
-        service.assignMemberRole(board.getId(), assignee.getId(), "MEMBER", owner.getId());
+        // the assignee can only get cards through a team that the board belongs to
+        backend.services.TeamService teams = new backend.services.impl.TeamServiceImpl(
+                new backend.dao.TeamDao(), new UserDao(), new backend.dao.UserTeamDao());
+        backend.services.UserTeamService userTeams = new backend.services.impl.UserTeamServiceImpl(
+                new backend.dao.UserTeamDao(), new backend.dao.TeamDao(), new UserDao());
+        backend.models.team.Team team = teams.createTeam("team-" + UUID.randomUUID(), null, owner.getId());
+        userTeams.addMember(team.getId(), assignee.getId(), backend.models.team.TeamRole.MEMBER);
+        Board fresh = new TaskTableDao().findById(board.getId());
+        fresh.setTeam(team);
+        new TaskTableDao().update(fresh);
+
         Task task = service.createTask("card", null, assignee.getId(), lists.get(0).getId(), owner.getId());
         assertTrue(new UserDao().deleteById(assignee.getId()));
 
         Task stored = new TaskDao().findById(task.getId());
         assertNotNull(stored);
         assertNull(stored.getUserOwner());
-        assertNull(new TaskTableDao().findById(board.getId()).getMemberRole(assignee.getId()));
     }
 
     @Test
@@ -236,11 +245,4 @@ class MappingSmokeTest {
         assertEquals(4, board.getTaskLists().size());
     }
 
-    @Test
-    @DisplayName("Exposed member roles cannot be mutated from outside the entity")
-    void memberRolesAreReadOnly() {
-        Board board = new Board("b");
-        assertThrows(UnsupportedOperationException.class,
-                () -> board.getMemberRoles().put(UUID.randomUUID(), "MEMBER"));
-    }
 }

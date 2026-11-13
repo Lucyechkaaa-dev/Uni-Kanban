@@ -3,19 +3,11 @@ package backend.models.task;
 import backend.models.team.Team;
 import backend.models.user.User;
 import jakarta.persistence.*;
-import lombok.AccessLevel;
-import lombok.AllArgsConstructor;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
+import lombok.*;
 import org.hibernate.annotations.ColumnDefault;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
 import java.util.UUID;
 
@@ -59,15 +51,6 @@ public class Board{
     @EqualsAndHashCode.Exclude
     private List<TaskList> taskLists = new ArrayList<>();
 
-    // Eager on purpose: DAOs return detached boards, and permission checks read the roles outside the session.
-    @ElementCollection(fetch = FetchType.EAGER)
-    @CollectionTable(name = "board_member_roles", joinColumns = @JoinColumn(name = "board_id"))
-    @MapKeyColumn(name = "user_id")
-    @Column(name = "role")
-    @ToString.Exclude
-    @EqualsAndHashCode.Exclude
-    private Map<UUID, String> memberRoles = new HashMap<>();
-
     public Board(String name) {
         this(name, (User) null);
     }
@@ -76,14 +59,12 @@ public class Board{
         this.name = name;
         this.team = team;
         this.taskLists = new ArrayList<>();
-        this.memberRoles = new HashMap<>();
     }
 
     public Board(String name, User user) {
         this.name = name;
         this.user = user;
         this.taskLists = new ArrayList<>();
-        this.memberRoles = new HashMap<>();
     }
 
     public boolean isOwner(UUID userId) {
@@ -94,32 +75,11 @@ public class Board{
         return user != null && isOwner(user.getId());
     }
 
-    public void assignMemberRole(UUID userId, String role) {
-        if (userId != null && role != null && !role.isBlank()) {
-	        memberRoles.put(userId, role.trim().toUpperCase());
-        }
-    }
-
-    public void removeMemberRole(UUID userId) {
-        if (userId != null) {
-            memberRoles.remove(userId);
-        }
-    }
-
-    public String getMemberRole(UUID userId) {
-        return userId != null ? memberRoles.get(userId) : null;
-    }
-
-    public Map<UUID, String> getMemberRoles() {
-        return Map.copyOf(memberRoles);
-    }
-
     public Board(String name, User user, Team team) {
         this.name = name;
         this.user = user;
         this.team = team;
         this.taskLists = new ArrayList<>();
-        this.memberRoles = new HashMap<>();
     }
 
     public void addTaskList(TaskList taskList) {
