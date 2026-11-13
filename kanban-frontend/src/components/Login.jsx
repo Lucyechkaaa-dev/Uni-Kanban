@@ -1,4 +1,26 @@
+import { useState } from 'react';
+import { api } from '../api';
+
 export default function Login({ onSwitchToRegister, onLoginSuccess }) {
+    const [error, setError] = useState('');
+    const [busy, setBusy] = useState(false);
+
+    async function handleSubmit(e) {
+        e.preventDefault();
+        //read fields BEFORE the first await (after it e.currentTarget is already null
+        const form = new FormData(e.currentTarget);
+        setBusy(true);
+        setError('');
+        try {
+            const user = await api.login(form.get('email'), form.get('password'));
+            onLoginSuccess(user);
+        } catch (err) {
+            setError(err.message);
+        } finally {
+            setBusy(false);
+        }
+    }
+
     return (
         <div className="auth-container">
             <div className="brand-header">
@@ -13,7 +35,7 @@ export default function Login({ onSwitchToRegister, onLoginSuccess }) {
             </div>
             <div className="auth-card">
                 <h2>Login to your account</h2>
-                <form onSubmit={(e) => { e.preventDefault(); onLoginSuccess(); }}>
+                <form onSubmit={handleSubmit}>
                     <div className="form-group">
                         <label htmlFor="login-email">Email</label>
                         <input id="login-email" name="email" type="email" autoComplete="email" placeholder="example@mail.com" required />
@@ -22,7 +44,8 @@ export default function Login({ onSwitchToRegister, onLoginSuccess }) {
                         <label htmlFor="login-password">Password</label>
                         <input id="login-password" name="password" type="password" autoComplete="current-password" placeholder="password" required />
                     </div>
-                    <button type="submit" className="btn-primary">Login</button>
+                    {error && <div className="form-error" role="alert">{error}</div>}
+                    <button type="submit" className="btn-primary" disabled={busy}>Login</button>
                 </form>
             </div>
             <div className="auth-footer">

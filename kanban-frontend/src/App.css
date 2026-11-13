@@ -136,6 +136,22 @@ body {
   margin-top: 4px;
 }
 
+.form-error {
+  font-size: 0.8rem;
+  color: #dc2626;
+  margin-top: 4px;
+}
+
+.board-error {
+  margin: 12px 24px 0;
+  padding: 8px 12px;
+  border: 1px solid #dc2626;
+  border-radius: 6px;
+  color: #dc2626;
+  font-size: 0.85rem;
+  cursor: pointer;
+}
+
 .btn-primary {
   width: 100%;
   padding: 9px;

@@ -1,4 +1,5 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { api, initials } from '../api';
 
 const EMPTY_NEW_TASK = { name: '', comment: '', priority: 'Medium', tag: '#Custom', date: '' };
 
@@ -10,41 +11,37 @@ const getTodayLocal = () => {
 
 const isBlank = (value) => !value || !value.trim();
 
-export default function BoardView({ theme, toggleTheme, onLogout }) {
-    const [columns, setColumns] = useState([
-        {
-            id: 'todo',
-            title: 'To-do',
-            color: '#94a3b8',
-            tasks: [
-                { id: 'task-1', code: '#TASK-101#', priority: 'Medium', name: 'example task', comment: 'example comment', tag: '#Frontend', user: 'SK', date: '2026-10-15', commentsCount: 3 }
-            ]
-        },
-        {
-            id: 'in-progress',
-            title: 'In progress',
-            color: '#3b82f6',
-            tasks: [
-                { id: 'task-2', code: '#TASK-102#', priority: 'High', name: 'example task2', comment: 'example comment2', tag: '#Backend', user: 'AL', date: '2026-10-18', commentsCount: 8 }
-            ]
-        },
-        {
-            id: 'in-review',
-            title: 'In review',
-            color: '#eab308',
-            tasks: [
-                { id: 'task-3', code: '#TASK-103#', priority: 'Medium', name: 'example task3', comment: 'example comment3', tag: '#API', user: 'JC', date: '2026-10-20', commentsCount: 6 }
-            ]
-        },
-        {
-            id: 'done',
-            title: 'Done',
-            color: '#22c55e',
-            tasks: [
-                { id: 'task-4', code: '#TASK-104#', priority: 'Low', name: 'example task4', comment: 'example comment4', tag: '#DevOps', user: 'JC', date: '2026-10-12', commentsCount: 4 }
-            ]
-        }
-    ]);
+export default function BoardView({ user, theme, toggleTheme, onLogout }) {
+    const [board, setBoard] = useState(null);
+    const [error, setError] = useState('');
+    const columns = board ? board.columns : [];
+
+    const setColumns = (update) =>
+        setBoard((current) => (current ? { ...current, columns: update(current.columns) } : current));
+
+      useEffect(() => {
+        let cancelled = false;
+        api.firstBoard()
+            .then((loaded) => { if (!cancelled) setBoard(loaded); })
+            .catch((err) => { if (!cancelled) setError(err.message); });
+        return () => { cancelled = true; };
+    }, []);
+      const queue = useRef(Promise.resolve());
+    const send = (action, onSaved) => {
+        queue.current = queue.current.then(async () => {
+            try {
+                const result = await action();
+                if (onSaved) onSaved(result);
+            } catch (err) {
+                setError(err.message);
+                try {
+                    setBoard(await api.board(board.id));
+                } catch {
+                    /* the screen stays as it is; the message says what went wrong */
+                }
+            }
+        });
+    };
 
     const [draggedTaskId, setDraggedTaskId] = useState(null);
     const [activeMenuTaskId, setActiveMenuTaskId] = useState(null);
@@ -68,20 +65,18 @@ export default function BoardView({ theme, toggleTheme, onLogout }) {
     const handleDrop = (targetColumnId) => {
         if (!draggedTaskId) return;
 
-        const sourceColumn = columns.find(col => col.tasks.some(t => t.id === draggedTaskId));
+        const movedTaskId = draggedTaskId;
+        const sourceColumn = columns.find(col => col.tasks.some(t => t.id === movedTaskId));
+        setDraggedTaskId(null);
+        if (!sourceColumn || sourceColumn.id === targetColumnId) return;
 
-        if (!sourceColumn || sourceColumn.id === targetColumnId) {
-            setDraggedTaskId(null);
-            return;
-        }
-
-        const movedTask = sourceColumn.tasks.find(t => t.id === draggedTaskId);
-        setColumns(columns.map(col => {
-            if (col.id === sourceColumn.id) return { ...col, tasks: col.tasks.filter(t => t.id !== draggedTaskId) };
+        const movedTask = sourceColumn.tasks.find(t => t.id === movedTaskId);
+        setColumns(cols => cols.map(col => {
+            if (col.id === sourceColumn.id) return { ...col, tasks: col.tasks.filter(t => t.id !== movedTaskId) };
             if (col.id === targetColumnId) return { ...col, tasks: [...col.tasks, movedTask] };
             return col;
         }));
-        setDraggedTaskId(null);
+        send(() => api.moveTask(movedTaskId, targetColumnId));
     };
 
     const startEditing = (task) => {
@@ -89,57 +84,54 @@ export default function BoardView({ theme, toggleTheme, onLogout }) {
         setEditFormData({ ...task });
         setActiveMenuTaskId(null); // Закрываем меню 3-х точек
     };
-    const saveTaskEdit = (columnId) => {
+    const saveTaskEdit = () => {
         if (isBlank(editFormData.name)) return;
 
-        const updatedTask = { ...editFormData, name: editFormData.name.trim() };
-        setColumns(columns.map(col => {
-            if (col.id === columnId) {
-                return {
-                    ...col,
-                    tasks: col.tasks.map(t => t.id === editingTaskId ? updatedTask : t)
-                };
-            }
-            return col;
-        }));
+        const taskId = editingTaskId;
+        const form = { ...editFormData, name: editFormData.name.trim() };
         setEditingTaskId(null);
+        setColumns(cols => cols.map(col => ({
+            ...col,
+            tasks: col.tasks.map(t => t.id === taskId
+                ? { ...t, name: form.name, comment: form.comment, tag: form.tag, priority: form.priority, date: form.date }
+                : t)
+        })));
+        send(() => api.updateTask(taskId, form));
     };
     const deleteTask = (taskId) => {
-        setColumns(columns.map(col => ({
+        setActiveMenuTaskId(null);
+        setColumns(cols => cols.map(col => ({
             ...col,
             tasks: col.tasks.filter(t => t.id !== taskId)
         })));
-        setActiveMenuTaskId(null);
+        send(() => api.deleteTask(taskId));
     };
     const handleSaveNewTask = (columnId) => {      //Inline
         if (isBlank(newTaskData.name)) return;
 
-        const newTask = {
-            // eslint-disable-next-line react-hooks/purity
-            id: `task-${Date.now()}`,
-            // eslint-disable-next-line react-hooks/purity
-            code: `#TASK-${Math.floor(100 + Math.random() * 900)}#`,
-            priority: newTaskData.priority,
+        const form = {
+            ...newTaskData,
             name: newTaskData.name.trim(),
             comment: newTaskData.comment.trim(),
-            tag: newTaskData.tag,
-            user: 'NN',
-            date: newTaskData.date || getTodayLocal(),
-            commentsCount: 0
+            date: newTaskData.date || getTodayLocal()
         };
-
-        setColumns(columns.map(col => col.id === columnId ? { ...col, tasks: [...col.tasks, newTask] } : col));
         setAddingToColumnId(null);
         setNewTaskData(EMPTY_NEW_TASK);
+        //id and number are given by the server, so the card is added from its answer
+        send(() => api.createTask(columnId, form, user.id), (created) =>
+            setColumns(cols => cols.map(col => col.id === columnId ? { ...col, tasks: [...col.tasks, created] } : col)));
     };
     const cancelAdding = () => {
         setAddingToColumnId(null);
         setNewTaskData(EMPTY_NEW_TASK);
     };
 
+    if (!board) {
+        return <div className="auth-container">{error || 'Loading the board…'}</div>;
+    }
+
     return (
         <div className="app-layout" onClick={() => setActiveMenuTaskId(null)}>
-            {/* Боковое меню */}
             <aside className="sidebar">
                 <div className="sidebar-top">
                     <div className="logo-area">
@@ -158,10 +150,10 @@ export default function BoardView({ theme, toggleTheme, onLogout }) {
                 </div>
                 <div className="user-profile">
                     <div className="user-info">
-                        <div className="avatar">NN</div>
+                        <div className="avatar">{initials(user.username)}</div>
                         <div>
-                            <div className="user-name">Nick Name</div>
-                            <div className="user-role">Workspace admin</div>
+                            <div className="user-name">{user.username}</div>
+                            <div className="user-role">{user.email}</div>
                         </div>
                     </div>
                     <button className="icon-btn" title="Log out" aria-label="Log out" onClick={onLogout}>
@@ -176,25 +168,31 @@ export default function BoardView({ theme, toggleTheme, onLogout }) {
 
             <main className="main-content">
                 <div className="board-header-top">
-                    <span>#Board title#</span>
+                    <span>{board.name}</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
                         <button className="theme-toggle-btn" onClick={toggleTheme}>
                             {theme === 'dark' ? '☀️' : '🌙'}
                         </button>
-                        <div className="avatar" style={{ width: '24px', height: '24px', fontSize: '0.65rem' }}>NN</div>
+                        <div className="avatar" style={{ width: '24px', height: '24px', fontSize: '0.65rem' }}>{initials(user.username)}</div>
                     </div>
                 </div>
 
                 <div className="board-body-header">
                     <div className="board-title-row">
-                        <h1>#Board title# ⭐</h1>
+                        <h1>{board.name} ⭐</h1>
                         <div className="board-actions">
                             <button className="btn-secondary">🔗 Share</button>
                             <button className="btn-success" onClick={() => columns[0] && setAddingToColumnId(columns[0].id)}>+ Add task</button>
                         </div>
                     </div>
-                    <div className="board-comment-text">#Board comment#</div>
+                    <div className="board-comment-text">{board.description}</div>
                 </div>
+
+                {error && (
+                    <div className="board-error" role="alert" title="Click to dismiss" onClick={() => setError('')}>
+                        {error}
+                    </div>
+                )}
 
                 <div className="kanban-board">
                     {columns.map(col => (

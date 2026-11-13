@@ -124,6 +124,16 @@ public class TaskDao {
 					.list();
 		}
 	}
+	public List<Task> findByBoardId(UUID boardId) {
+		if (boardId == null) return Collections.emptyList();
+		try (Session session = HibernateFactory.getSessionFactory().openSession()) {
+			return session.createQuery(
+							"select t from Task t left join fetch t.userOwner join fetch t.taskListParent l "
+									+ "where l.board.id = :boardId order by l.position asc, t.position asc, t.id asc", Task.class)
+					.setParameter("boardId", boardId)
+					.list();
+		}
+	}
 	public int nextPositionInList(UUID taskListId) {
 		if (taskListId == null) return 0;
 		try (Session session = HibernateFactory.getSessionFactory().openSession()) {
