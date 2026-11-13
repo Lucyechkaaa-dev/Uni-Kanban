@@ -23,11 +23,8 @@ public class CompileLauncher {
 		printBanner(Env.getConfig());
 		HibernateFactory.getSessionFactory();
 		Runtime.getRuntime().addShutdownHook(new Thread(HibernateFactory::shutdown));
-		ConfigurableApplicationContext context = SpringApplication.run(Main.class, args);
-		try {
+		try(ConfigurableApplicationContext context = SpringApplication.run(Main.class, args)){
 			context.getBean(ConsoleMenu.class).init();
-		} finally {
-			context.close();
 		}
 	}
 
