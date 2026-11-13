@@ -3,7 +3,9 @@ package backend.services;
 import backend.models.task.Task;
 import backend.models.task.TaskList;
 import backend.models.task.Board;
+import backend.models.task.Priority;
 
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -57,11 +59,18 @@ public interface TaskService {
 
     Task createTask(String title, String description, UUID assigneeId, UUID listId, UUID operatorId);
 
+    /** The same, with the fields the card form has. priority, tag and dueDate may be null (MEDIUM, no tag, no date). */
+    Task createTask(String title, String description, Priority priority, String tag, LocalDate dueDate,
+                    UUID assigneeId, UUID listId, UUID operatorId);
+
     Optional<Task> findTask(UUID id);
 
     Task getTask(UUID id);
 
     List<Task> findTasksByList(UUID listId);
+
+    /** Every card of the board with its assignee loaded, ordered by position: for the board screen. */
+    List<Task> findTasksByTable(UUID tableId);
 
     List<Task> findTasksByUser(UUID userId);
 

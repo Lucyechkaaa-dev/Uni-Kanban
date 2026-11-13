@@ -77,12 +77,12 @@ class MappingSmokeTest {
     }
 
     @Test
-    @DisplayName("All six entities are registered in hibernate.cfg.xml")
+    @DisplayName("All seven entities are registered in hibernate.cfg.xml")
     void allEntitiesAreMapped() {
         Set<String> names = sessionFactory.getMetamodel().getEntities().stream()
                 .map(EntityType::getName)
                 .collect(Collectors.toSet());
-        assertEquals(Set.of("User", "Task", "Board", "TaskList", "Team", "UserTeam"), names);
+        assertEquals(Set.of("User", "Task", "Board", "TaskList", "Team", "UserTeam", "AuthSession"), names);
     }
 
     @Test

@@ -35,5 +35,6 @@
         <mapping class="backend.models.task.Board"/>
         <mapping class="backend.models.team.Team"/>
         <mapping class="backend.models.task.TaskList"/>
+        <mapping class="backend.models.user.AuthSession"/>
     </session-factory>
 </hibernate-configuration>

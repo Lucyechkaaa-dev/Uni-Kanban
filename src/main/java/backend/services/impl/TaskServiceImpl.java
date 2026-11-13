@@ -8,6 +8,7 @@ import backend.dao.UserTeamDao;
 import backend.models.task.Task;
 import backend.models.task.TaskList;
 import backend.models.task.Board;
+import backend.models.task.Priority;
 import backend.models.team.UserTeam;
 import backend.models.user.User;
 import backend.services.Access;
@@ -17,6 +18,7 @@ import lombok.extern.log4j.Log4j2;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
+import java.time.LocalDate;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -35,6 +37,8 @@ public class TaskServiceImpl implements TaskService{
 	private final TaskTableDao taskTableDao;
 	private final UserDao userDao;
 	private final UserTeamDao userTeamDao;
+
+	private static final int MAX_TAG_LENGTH = 32; // the tag column is varchar(32)
 
 	// ==================== Task Table Operations ====================
 
@@ -185,7 +189,14 @@ public class TaskServiceImpl implements TaskService{
 
 	@Override
 	public Task createTask(String title, String description, UUID assigneeId, UUID listId, UUID operatorId) {
+		return createTask(title, description, null, null, null, assigneeId, listId, operatorId);
+	}
+
+	@Override
+	public Task createTask(String title, String description, Priority priority, String tag, LocalDate dueDate,
+						   UUID assigneeId, UUID listId, UUID operatorId) {
 		validateNotBlank(title, "Task title cannot be empty");
+		String cleanTag = cleanTag(tag);
 		TaskList list = getList(listId);
 		require(Access.EDIT, list.getBoard(), operatorId);
 		User assignee = assigneeId != null ? getUserOrThrow(assigneeId) : null;
@@ -194,6 +205,11 @@ public class TaskServiceImpl implements TaskService{
 		}
 
 		Task task = new Task(title.trim(), description != null ? description.trim() : null, assignee, list);
+		if (priority != null) {
+			task.setPriority(priority);
+		}
+		task.setTag(cleanTag);
+		task.setDueDate(dueDate);
 		// number and position are assigned inside the same transaction as the insert
 		taskDao.saveInList(task);
 		log.info("Created Task '{}' (id={}) by operator {}", task.getTitle(), task.getId(), operatorId);
@@ -213,6 +229,11 @@ public class TaskServiceImpl implements TaskService{
 	@Override
 	public List<Task> findTasksByList(UUID listId) {
 		return listId != null ? taskDao.findByTaskListId(listId) : Collections.emptyList();
+	}
+
+	@Override
+	public List<Task> findTasksByTable(UUID tableId) {
+		return tableId != null ? taskDao.findByBoardId(tableId) : Collections.emptyList();
 	}
 
 	@Override
@@ -265,7 +286,7 @@ public class TaskServiceImpl implements TaskService{
 		if (task.getPriority() != null) {
 			stored.setPriority(task.getPriority());
 		}
-		stored.setTag(task.getTag());
+		stored.setTag(cleanTag(task.getTag()));
 		stored.setDueDate(task.getDueDate());
 		taskDao.update(stored);
 		log.info("Updated Task entity id={} by operator {}", stored.getId(), operatorId);
@@ -419,6 +440,18 @@ public class TaskServiceImpl implements TaskService{
 			throw new NoSuchElementException("User not found with id: " + userId);
 		}
 		return user;
+	}
+
+	/** Blank tag = no tag; a tag longer than the column is refused here, not by the database. */
+	private String cleanTag(String tag) {
+		if (tag == null || tag.isBlank()) {
+			return null;
+		}
+		String trimmed = tag.trim();
+		if (trimmed.length() > MAX_TAG_LENGTH) {
+			throw new IllegalArgumentException("Tag must be at most " + MAX_TAG_LENGTH + " characters long");
+		}
+		return trimmed;
 	}
 
 	private void validateNotBlank(String value, String message) {
