@@ -3,36 +3,40 @@ import Login from './components/Login';
 import Register from './components/Register';
 import BoardView from './components/BoardView';
 import { api, setUnauthorizedHandler } from './api';
+import { THEME, THEME_STORAGE_KEY, VIEW } from './constants';
 import './App.css';
 
 export default function App() {
-   const [currentView, setCurrentView] = useState('loading');
+  // the login cookie is invisible to the page, so at the start we do not know whether we are logged in: ask the backend
+  const [currentView, setCurrentView] = useState(VIEW.LOADING);
   const [user, setUser] = useState(null);
   const [theme, setTheme] = useState(() =>
-    localStorage.getItem('kanban-theme') === 'dark' ? 'dark' : 'light'
+    localStorage.getItem(THEME_STORAGE_KEY) === THEME.DARK ? THEME.DARK : THEME.LIGHT
   );
 
   useLayoutEffect(() => {
     document.documentElement.setAttribute('data-theme', theme);
   }, [theme]);
 
-    useEffect(() => {
+  // the login expired or was ended: back to the login page
+  useEffect(() => {
     setUnauthorizedHandler(() => {
       setUser(null);
-      setCurrentView('login');
+      setCurrentView(VIEW.LOGIN);
     });
   }, []);
 
-   useEffect(() => {
+  // on every start and after a page reload: "who am I?" - a valid cookie gives the user back, otherwise 401
+  useEffect(() => {
     let cancelled = false;
     api.me()
       .then((me) => {
         if (cancelled) return;
         setUser(me);
-        setCurrentView('board');
+        setCurrentView(VIEW.BOARD);
       })
       .catch(() => {
-        if (!cancelled) setCurrentView('login');
+        if (!cancelled) setCurrentView(VIEW.LOGIN);
       });
     return () => {
       cancelled = true;
@@ -40,46 +44,47 @@ export default function App() {
   }, []);
 
   const toggleTheme = () => {
-    const nextTheme = theme === 'light' ? 'dark' : 'light';
+    const nextTheme = theme === THEME.LIGHT ? THEME.DARK : THEME.LIGHT;
     setTheme(nextTheme);
-    localStorage.setItem('kanban-theme', nextTheme);
+    localStorage.setItem(THEME_STORAGE_KEY, nextTheme);
   };
 
   const handleAuthSuccess = (loggedInUser) => {
     setUser(loggedInUser);
-    setCurrentView('board');
+    setCurrentView(VIEW.BOARD);
   };
 
   const handleLogout = async () => {
     try {
       await api.logout();
     } catch {
-     }
+      // even if the request failed, the user leaves this page; a dead login is dropped by the backend on its own
+    }
     setUser(null);
-    setCurrentView('login');
+    setCurrentView(VIEW.LOGIN);
   };
 
   return (
       <>
-        {currentView === 'loading' && (
+        {currentView === VIEW.LOADING && (
             <div className="auth-container">Loading…</div>
         )}
 
-        {currentView === 'login' && (
+        {currentView === VIEW.LOGIN && (
             <Login
-                onSwitchToRegister={() => setCurrentView('register')}
+                onSwitchToRegister={() => setCurrentView(VIEW.REGISTER)}
                 onLoginSuccess={handleAuthSuccess}
             />
         )}
 
-        {currentView === 'register' && (
+        {currentView === VIEW.REGISTER && (
             <Register
-                onSwitchToLogin={() => setCurrentView('login')}
+                onSwitchToLogin={() => setCurrentView(VIEW.LOGIN)}
                 onRegisterSuccess={handleAuthSuccess}
             />
         )}
 
-        {currentView === 'board' && user && (
+        {currentView === VIEW.BOARD && user && (
             <BoardView
                 user={user}
                 theme={theme}

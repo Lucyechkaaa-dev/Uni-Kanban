@@ -1,56 +1,26 @@
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
+import { DEFAULT_GRANT_ROLE, MIN_SEARCH_LENGTH, ROLE, ROLE_LABELS } from '../constants';
 import { api } from '../api';
+import { useMembers } from '../hooks/useMembers';
+import { useUserSearch } from '../hooks/useUserSearch';
+import ErrorBanner from './common/ErrorBanner';
+import MemberRow from './share/MemberRow';
 import './ShareDialog.css';
 
-// Team role names as the backend knows them, with what they allow.
-const ROLE_LABELS = {
-    VIEWER: 'Viewer (read only)',
-    MEMBER: 'Editor (works on cards)',
-    ADMIN: 'Admin (manages members)',
-};
-
-const SEARCH_DELAY_MS = 300;
-const MIN_SEARCH_LENGTH = 2;
-
-// The server enforces these rules; the dialog only hides what would be refused.
+// The server enforces the rules; the dialog only hides what would be refused.
 // Only the owner grants or changes ADMIN.
 export default function ShareDialog({ boardId, myRole, currentUserId, onClose, onChanged }) {
-    const isOwner = myRole === 'OWNER';
-    const canManage = isOwner || myRole === 'ADMIN';
-    const [members, setMembers] = useState([]);
-    const [query, setQuery] = useState('');
-    const [results, setResults] = useState([]);
-    const [grantRole, setGrantRole] = useState('MEMBER');
+    const isOwner = myRole === ROLE.OWNER;
+    const canManage = isOwner || myRole === ROLE.ADMIN;
+    const [grantRole, setGrantRole] = useState(DEFAULT_GRANT_ROLE);
     const [error, setError] = useState('');
+    const { members, reload } = useMembers(boardId, setError);
+    const { query, results, changeQuery, reset } = useUserSearch(members, setError);
 
-    const roleOptions = (current) => Object.keys(ROLE_LABELS).filter((r) => isOwner || r !== 'ADMIN' || current === 'ADMIN');
+    const roleOptions = (current) =>
+        Object.keys(ROLE_LABELS).filter((r) => isOwner || r !== ROLE.ADMIN || current === ROLE.ADMIN);
 
-    const reload = () => api.members(boardId).then(setMembers);
-
-    useEffect(() => {
-        let cancelled = false;
-        api.members(boardId)
-            .then((list) => { if (!cancelled) setMembers(list); })
-            .catch((err) => { if (!cancelled) setError(err.message); });
-        return () => { cancelled = true; };
-    }, [boardId]);
-
-    // search as the user types, but only after a short pause and from 2 characters on
-    // (results are cleared in the change handler, not here)
-    useEffect(() => {
-        if (query.trim().length < MIN_SEARCH_LENGTH) return undefined;
-        const timer = setTimeout(async () => {
-            try {
-                const found = await api.searchUsers(query.trim());
-                const taken = new Set(members.map((m) => m.userId));
-                setResults(found.filter((u) => !taken.has(u.id)));
-            } catch (err) {
-                setError(err.message);
-            }
-        }, SEARCH_DELAY_MS);
-        return () => clearTimeout(timer);
-    }, [query, members]);
-
+    // every change: do it, read the people again, tell the page that the list of boards may have changed
     const run = async (action) => {
         setError('');
         try {
@@ -64,8 +34,7 @@ export default function ShareDialog({ boardId, myRole, currentUserId, onClose, o
 
     const add = (user) => run(async () => {
         await api.addMember(boardId, user.id, grantRole);
-        setQuery('');
-        setResults([]);
+        reset();
     });
 
     const changeRole = (member, role) => run(() => api.changeMemberRole(boardId, member.userId, role));
@@ -87,7 +56,7 @@ export default function ShareDialog({ boardId, myRole, currentUserId, onClose, o
                     <button className="icon-btn" aria-label="Close" onClick={onClose}>✕</button>
                 </div>
 
-                {error && <div className="board-error" role="alert" onClick={() => setError('')}>{error}</div>}
+                <ErrorBanner message={error} onDismiss={() => setError('')} />
 
                 {canManage && (
                     <div className="share-search">
@@ -98,10 +67,7 @@ export default function ShareDialog({ boardId, myRole, currentUserId, onClose, o
                                 placeholder="Search users by name"
                                 aria-label="Search users"
                                 value={query}
-                                onChange={(e) => {
-                                    setQuery(e.target.value);
-                                    if (e.target.value.trim().length < MIN_SEARCH_LENGTH) setResults([]);
-                                }}
+                                onChange={(e) => changeQuery(e.target.value)}
                             />
                             <select
                                 className="edit-select"
@@ -125,39 +91,18 @@ export default function ShareDialog({ boardId, myRole, currentUserId, onClose, o
                 )}
 
                 <h3>People with access</h3>
-                {members.map((m) => {
-                    const isOwnerRow = m.role === 'OWNER';
-                    const editable = !isOwnerRow && canManage && (isOwner || m.role !== 'ADMIN');
-                    const removable = !isOwnerRow && (m.userId === currentUserId || editable);
-                    return (
-                        <div key={m.userId} className="share-row">
-                            <span className="share-name">
-                                {m.username}
-                                {m.userId === currentUserId && <span className="share-empty">(you)</span>}
-                            </span>
-                            {isOwnerRow ? (
-                                <span className="share-badge">Owner</span>
-                            ) : (
-                                <span className="share-controls">
-                                    <select
-                                        className="edit-select"
-                                        aria-label={`Role of ${m.username}`}
-                                        value={m.role}
-                                        disabled={!editable}
-                                        onChange={(e) => changeRole(m, e.target.value)}
-                                    >
-                                        {roleOptions(m.role).map((r) => <option key={r} value={r}>{ROLE_LABELS[r]}</option>)}
-                                    </select>
-                                    {removable && (
-                                        <button className="btn-sm-cancel" onClick={() => remove(m)}>
-                                            {m.userId === currentUserId ? 'Leave' : 'Remove'}
-                                        </button>
-                                    )}
-                                </span>
-                            )}
-                        </div>
-                    );
-                })}
+                {members.map((m) => (
+                    <MemberRow
+                        key={m.userId}
+                        member={m}
+                        currentUserId={currentUserId}
+                        canManage={canManage}
+                        isOwner={isOwner}
+                        roleOptions={roleOptions}
+                        onChangeRole={changeRole}
+                        onRemove={remove}
+                    />
+                ))}
                 {members.length <= 1 && <div className="share-empty">Nobody else has access yet.</div>}
             </div>
         </div>
